@@ -458,6 +458,7 @@ BooleanLiteral
 Expression
 	= MemberExpression
 	/ FunctionCallExpression
+	/ NewExpression
 	/ AssignmentExpression
 	/ UnaryExpression
 	/ LogicalExpression
@@ -523,6 +524,17 @@ FunctionCallExpression
 	{
 		return {
 			"type": "CallExpression",
+			"callee": iden,
+			"arguments": extractOptional(args, 3) || []
+		}
+	}
+	
+/* New Expressions */
+NewExpression
+	= "new" _ iden:(MemberExpression / Identifier) args:(_ "with" _ FunctionArguments)?
+	{
+		return {
+			"type": "NewExpression",
 			"callee": iden,
 			"arguments": extractOptional(args, 3) || []
 		}
