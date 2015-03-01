@@ -35,7 +35,7 @@ Options:
 
 #### Javascript
 
-`dogescript(file, beauty, trueDoge)`
+`dogescript(file, beauty)`
 * `file` - A string of Dogescript.
 * `beauty` - A boolean, set to true if you want the output to be ran through a beautifier.
 

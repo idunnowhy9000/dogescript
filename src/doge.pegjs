@@ -18,6 +18,12 @@
 		"few": "/=",
 	};
 	
+	var idenMapping = {
+		"yes": "true",
+		"no": "false",
+		"empty": "null"
+	};
+	
 	var maybeOP = {
 		"type": "UnaryExpression",
 		"operator": "!",
@@ -95,6 +101,10 @@
 	
 	function toOP(str) {
 		return keyMapping[str] || str;
+	}
+	
+	function toId(str) {
+		return idenMapping[str] || str;
 	}
 	
 	function moduleName(str) {
@@ -212,13 +222,13 @@ IdentifierName "identifier"
 	{
 		return {
 			"type": "Identifier",
-			"name": optionalStr(first) + rest.join("")
+			"name": toId(optionalStr(first) + rest.join(""))
 		};
 	}
 
 /* Reserved Words */
 ReservedWord
-	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "maybe"
+	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "maybe" / "bark"
 
 /** 2.1 Statements */
 /* Statement */
@@ -254,7 +264,7 @@ DeclarationStatement
 
 /* AssignmentStatement */
 AssignmentStatement
-	= iden:Identifier __ "is" __ expr:Expression (__ EOS)?
+	= iden:Identifier __ "as" __ expr:Expression (__ EOS)?
 	{
 		return {
 			"type": "ExpressionStatement",
@@ -380,7 +390,7 @@ thisValue
 	}
 
 Literal
-	= NumLiteral / StringLiteral / BooleanLiteral
+	= DSONLiteral / NumLiteral / StringLiteral / BooleanLiteral
 
 NumLiteral
 	= literal:DecimalIntegerLiteral "." DecimalDigit*
@@ -388,7 +398,7 @@ NumLiteral
 		return {
 			"type": "Literal",
 			"value": parseFloat(literal.join("")),
-			"raw": text()
+			"raw": JSON.stringify(text())
 		};
 	}
 
@@ -420,6 +430,18 @@ StringLiteral
 		};
 	}
 
+DSONSourceCharacter
+	= !"}" char:SourceCharacter {return char;}
+
+DSONLiteral
+	= "{{" literal:DSONSourceCharacter* "}}"
+	{
+		return {
+			"type": "X-DSON-LITERAL",
+			"source": literal.join("")
+		};
+	}
+
 BooleanLiteral
 	= bool:("true"/"false"/"maybe")
 	{
@@ -444,7 +466,7 @@ Expression
 
 /* "Algebra" expressions */
 Additive
-	= left:Multiplicative _ op:("not"/"smallerish"/"biggerish"/"smaller"/"bigger"/"+"/"-"/"instanceof"/"is"/"==="/"!=="/"<="/">="/"<"/">") _ right:Additive
+	= left:Multiplicative _ op:("not"/"smallerish"/"biggerish"/"smaller"/"bigger"/"+"/"-"/"shibeof"/"instanceof"/"is"/"==="/"!=="/"<="/">="/"<"/">") _ right:Additive
 	{
 		return {
 			"type": "BinaryExpression",
@@ -485,7 +507,7 @@ LogicalExpression
 	
 /* Unary expressions */
 UnaryExpression
-	= op:("dogeof" / "shibeof" /"notrly" / "typeof" / "!") _ argument:Expression
+	= op:("dogeof" /"notrly" / "typeof" / "!") _ argument:Expression
 	{
 		return {
 			"type": "UnaryExpression",

@@ -1,36 +1,35 @@
 {
-	"name": "dogescript",
-	"version": "2.4.0-pre",
-	"description": "wow so syntax very doge much future",
-	"main": "index.js",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/remixz/dogescript.git"
-	},
-	"keywords": [
-		"wow"
-	],
-	"author": "Zach Bruggeman <zachb@diy.org>",
-	"license": "MIT",
-	"dependencies": {
-		"js-beautify": "~1.5.1",
-		"optimist": "~0.6.0",
-		"xhr": "^1.8.0",
-		"escodegen": "~1.6.1"
-	},
-	"bin": "./bin/dogescript.js",
-	"scripts": {
-		"clean": "node ./test/clean.js",
-		"test": "node ./test/spec.test.js | tap-dot",
-		"build": "node build.js",
-		"min": "uglifyjs dist/dogescript.js > dist/dogescript.min.js",
-		"dist": "npm run build && npm run min"
-	},
-	"devDependencies": {
-		"glob": "^4.0.2",
-		"tap-dot": "~0.2.2",
-		"tape": "~2.13.2",
-		"uglify-js": "^2.4.13",
-		"pegjs": "~0.8.0"
-	}
+  "name": "dogescript-3",
+  "version": "2.4.1-pre",
+  "description": "wow so syntax very doge much future (an unofficial third version of dogescript)",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/remixz/dogescript.git"
+  },
+  "keywords": [
+    "wow",
+    "dogescript"
+  ],
+  "author": "Zach Bruggeman <zachb@diy.org>",
+  "license": "MIT",
+  "dependencies": {
+    "escodegen": "~1.6.1",
+    "esprima": "~2.0.0",
+    "estraverse": "^1.9.1",
+    "js-beautify": "~1.5.1",
+    "optimist": "~0.6.0",
+    "pegjs": "~0.8.0"
+  },
+  "bin": "./bin/dogescript.js",
+  "scripts": {
+    "clean": "node ./test/clean.js",
+    "test": "node ./test/spec.test.js | tap-dot",
+    "build": "node build.js",
+    "min": "uglifyjs dist/dogescript.js > dist/dogescript.min.js",
+    "dist": "npm run build && npm run min"
+  },
+  "devDependencies": {
+    "uglify-js": "^2.4.13"
+  }
 }

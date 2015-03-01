@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-var fs		 = require('fs');
-var path	 = require('path');
-var util	 = require('util');
+var fs	     = require('fs');
+var path     = require('path');
+var util     = require('util');
 var stream   = require('stream');
-var repl	 = require('repl');
-var argv	 = require('optimist').usage('Usage: dogescript <file>').argv;
+var repl     = require('repl');
+var argv     = require('optimist').usage('Usage: dogescript <file>').argv;
 var beautify = require('js-beautify').js_beautify;
 
 var parser   = require('../lib/parser');
@@ -13,8 +13,7 @@ var compile  = require('../lib/compile');
 
 if (argv._[0]) {
 	var file = fs.readFile(path.resolve(process.cwd(), argv._[0]), {encoding: 'utf-8'}, function (err, script) {
-		if (argv['true-doge']) var lines = script.split(/ {3,}|\r?\n/);
-		else var lines = script.split(/\r?\n/);
+		var lines = script.split(/\r?\n/);
 		var output = '';
 
 		for (var i = 0; i < lines.length; i++) {
