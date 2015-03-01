@@ -60,6 +60,16 @@ quiet
 loud
 ```
 
+### Embedded Javascript
+
+Javascript **statements** may be embedded directly into dogescript. To embed Javascript, start with `@"` or `@'`, the Javascript code and end with `"` or `'` like strings.
+
+Embedded Javascript is a method to fill in the holes that dogescript doesn't fill (think of it like "polyfilling" languages).
+
+```
+@"console.log('this is embedded javascript');"
+```
+
 ### Variable Declaration and Assignment
 
 The syntax for declaration in dogescript is: `very`, followed by the variable's identifier, assignment operator (`=` or `is`), and an optional expression to initialize with.
@@ -130,17 +140,11 @@ To be added.
 
 ### Trained Statement
 
-The `trained` toggles `"use strict"` mode on the code, the statement translates directly to the Javascript string literal `"use strict"`. Trained Statements starts with `trained`.
+The `trained` statement toggles `"use strict"` mode on the code, the statement translates directly to the Javascript string literal `"use strict"`. Trained Statements starts with `trained`.
 
-### Embedded Javascript
+### Bark Statement
 
-Javascript **statements** may be embedded directly into dogescript. To embed Javascript, start with `@{`, the Javascript code and end with `}@`
-
-```
-@{
-	// javascript
-@}
-```
+The `bark` statement breaks out of the current block.
 
 ## "Built-in objects"
 

@@ -1,5 +1,5 @@
 {
-	var esprima = require("esprima");
+	/* var esprima = require("esprima"); */
 	
 	var keyMapping = {
 		"is": "===",
@@ -19,6 +19,47 @@
 		"lots": "*=",
 		"few": "/=",
 	};
+	
+	var maybeOP = {
+		"type": "UnaryExpression",
+		"operator": "!",
+		"argument": {
+			"type": "UnaryExpression",
+			"operator": "+",
+			"argument": {
+				"type": "CallExpression",
+				"callee": {
+					"type": "MemberExpression",
+					"computed": false,
+					"object": {
+						"type": "Identifier",
+						"name": "Math"
+					},
+					"property": {
+						"type": "Identifier",
+						"name": "round"
+					}
+				},
+				"arguments": [{
+					"type": "CallExpression",
+					"callee": {
+						"type": "MemberExpression",
+						"computed": false,
+						"object": {
+							"type": "Identifier",
+							"name": "Math"
+						},
+						"property": {
+							"type": "Identifier",
+							"name": "random"
+						}
+					},
+					"arguments": []
+				}]
+			},
+			"prefix": true
+		},
+	}
 		
 	function buildList(first, rest, index) {
 		return [first].concat(extractList(rest, index));
@@ -56,49 +97,6 @@
 	
 	function toOP(str) {
 		return keyMapping[str] || str;
-	}
-	
-	function maybeOP () {
-		return {
-			"type": "UnaryExpression",
-			"operator": "!",
-			"argument": {
-				"type": "UnaryExpression",
-				"operator": "+",
-				"argument": {
-					"type": "CallExpression",
-					"callee": {
-						"type": "MemberExpression",
-						"computed": false,
-						"object": {
-							"type": "Identifier",
-							"name": "Math"
-						},
-						"property": {
-							"type": "Identifier",
-							"name": "round"
-						}
-					},
-					"arguments": [{
-						"type": "CallExpression",
-						"callee": {
-							"type": "MemberExpression",
-							"computed": false,
-							"object": {
-								"type": "Identifier",
-								"name": "Math"
-							},
-							"property": {
-								"type": "Identifier",
-								"name": "random"
-							}
-						},
-						"arguments": []
-					}]
-				},
-				"prefix": true
-			},
-		}
 	}
 }
 
@@ -212,13 +210,15 @@ ReservedWord
 /** 2.1 Statements */
 /* Statement */
 Statement
-	= JSStatement
-	/ DeclarationStatement
+	= DeclarationStatement
+	/ AssignmentStatement
 	/ WowStatement
 	/ ExpressionStatement
 	/ TrainedStatement
 	/ ImportStatement
 	/ DeboogerStatement
+	/ BarkStatement
+	/ JSStatement
 
 /* Variable declarations */
 DeclarationStatement
@@ -237,6 +237,21 @@ DeclarationStatement
 			"declarations": makeVarDeclare(iden, extractOptional(expr, 3)),
 			"kind": "const"
 		};
+	}
+
+/* AssignmentStatement */
+AssignmentStatement
+	= iden:Identifier __ "is" __ expr:Expression (__ EOS)?
+	{
+		return {
+			"type": "ExpressionStatement",
+			"expression": {
+				"type": "AssignmentExpression",
+				"operator": "=",
+				"left": iden,
+				"right": expr
+			}
+		}
 	}
 
 /* Wow: ends block */
@@ -313,6 +328,15 @@ DeboogerStatement
 		}
 	}
 
+/* Bark Statement */
+BarkStatement
+	= "bark" (__ EOS)?
+	{
+		return {
+			"type": "BreakStatement"
+		}
+	}
+
 /** 2.1.1 Blocks */
 BlockNoWow
 	= src:(SourceElementNoWow (__ SourceElementNoWow)*)?
@@ -354,7 +378,7 @@ NumLiteral
 		return {
 			"type": "Literal",
 			"value": parseFloat(literal.join("")),
-			"raw": literal.join("")
+			"raw": text()
 		};
 	}
 
@@ -364,7 +388,7 @@ StringLiteral
 		return {
 			"type": "Literal",
 			"value": literal.join(""),
-			"raw": literal.join("")
+			"raw": text()
 		};
 	}
 	/ '"' literal:SourceCharacterNoQuote2* '"'
@@ -372,14 +396,14 @@ StringLiteral
 		return {
 			"type": "Literal",
 			"value": literal.join(""),
-			"raw": literal.join("")
+			"raw": text()
 		};
 	}
 
 BooleanLiteral
 	= bool:("true"/"false"/"maybe")
 	{
-		if (bool === "maybe") return maybeOP();
+		if (bool === "maybe") return maybeOP;
 		
 		return {
 			"type": "Identifier",
@@ -453,7 +477,7 @@ UnaryExpression
 
 /* Function Call Expressions */
 FunctionCallExpression
-	= "plz" _ iden:Identifier args:(_ "with" _ FunctionArguments)?
+	= "plz" _ iden:(MemberExpression / Identifier) args:(_ "with" _ FunctionArguments)?
 	{
 		return {
 			"type": "CallExpression",
@@ -603,11 +627,22 @@ ForStatement
 
 ForNext = "next" / ';'
 
-/** 2.8 JS Statements */
+/**
+	2.8 JS Statements,
+	Note that the node in this implementation is not an official Esprima node tree
+*/
 JSStatement
-	= "@{" __ source:(SourceCharacter)* __ "}@" (__ EOS)?
+	= "@'" source:SourceCharacterNoQuote1* "'" (__ EOS)?
 	{
-		var jssource = source.join("");
-		var jsast = esprima.parse("{\n" + jssource + "\n}"); // parse in block
-		return jsast["body"][0];
+		return {
+			"type": "X-JS-Statement",
+			"source": source.join("")
+		}
+	}
+	/ '@"' source:SourceCharacterNoQuote2* '"' (__ EOS)?
+	{
+		return {
+			"type": "X-JS-Statement",
+			"source": source.join("")
+		}
 	}

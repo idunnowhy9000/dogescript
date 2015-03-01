@@ -4,7 +4,7 @@ var pegjs = require("pegjs"),
 
 var OPTIONS = {
 	"PEG_FILE": "./src/doge.pegjs",
-	"PEG_OUT": "./lib/doge.js"
+	"PEG_OUT": "./lib/parser.js"
 }
 
 var pegfile = pegjs.buildParser(fs.readFileSync(path.join(__dirname,OPTIONS.PEG_FILE), "utf8"), {

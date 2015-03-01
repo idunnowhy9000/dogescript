@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
-var fs	     = require('fs');
-var path     = require('path');
-var util     = require('util');
+var fs		 = require('fs');
+var path	 = require('path');
+var util	 = require('util');
 var stream   = require('stream');
-var repl     = require('repl');
-var argv     = require('optimist').usage('Usage: dogescript <file>').argv;
+var repl	 = require('repl');
+var argv	 = require('optimist').usage('Usage: dogescript <file>').argv;
 var beautify = require('js-beautify').js_beautify;
-var parser   = require('../lib/compile');
+
+var parser   = require('../lib/parser');
+var compile  = require('../lib/compile');
 
 if (argv._[0]) {
 	var file = fs.readFile(path.resolve(process.cwd(), argv._[0]), {encoding: 'utf-8'}, function (err, script) {
@@ -16,7 +18,7 @@ if (argv._[0]) {
 		var output = '';
 
 		for (var i = 0; i < lines.length; i++) {
-			output += parser(lines[i]);
+			output += compile(lines[i]);
 		}
 
 		if (argv.beautify) process.stdout.write(beautify(output, {break_chained_methods: false}) + '\n');
@@ -32,7 +34,13 @@ if (argv._[0]) {
 
 	// see streams documentation
 	Stream.prototype._transform = function (chunk, encoding, callback) {
-		var script = compile(chunk.toString());
+		var script = compile(parser.parse(chunk.toString()));
+		var lines  = script.split(/\n+/);
+		
+		for (var i = 0; i < lines.length; i++) {
+			// ignore empty lines
+			if (lines[i] !== '') this.push(lines[i] + '\n');
+		}
 		
 		callback();
 	}
