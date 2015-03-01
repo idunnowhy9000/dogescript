@@ -1,6 +1,4 @@
 {
-	/* var esprima = require("esprima"); */
-	
 	var keyMapping = {
 		"is": "===",
 		"not": "!==",
@@ -98,6 +96,15 @@
 	function toOP(str) {
 		return keyMapping[str] || str;
 	}
+	
+	function moduleName(str) {
+		var mod = str, m = /^..?\/.*?([\w-]+)(\.\w+)?$/.exec(str);
+		if (m) {
+			mod = m[1];
+		}
+		mod = mod.replace(/-/g, '_');
+		return mod;
+	}
 }
 
 start = __ program:Program __ {return program;}
@@ -105,7 +112,13 @@ start = __ program:Program __ {return program;}
 /** 1. Lexical Grammar */
 
 /* End of statement */
-EOS = ";" / LineTerminator
+EOS = __ ";"
+	/ _ SingleLineComment? LineTerminator
+	/ __ EOF
+
+/* EOF */
+EOF "end of file"
+	= !.
 
 /* Source Character */
 SourceCharacter = .
@@ -297,25 +310,22 @@ TrainedStatement
 
 /* ImportStatement */
 ImportStatement
-	= "so" __ str:Identifier as:(__ "as" __ Identifier)? (__ EOS)?
+	= "so" __ str:StringLiteral as:(__ "as" __ Identifier)? (__ EOS)?
 	{
 		return {
 			"type": "VariableDeclaration",
 			"declarations": makeVarDeclare({
 				"type": "Identifier",
-				"name": extractOptional(as, 3) || str.name
+				"name": moduleName(as != null ? as[3].name : str.value)
 			}, {
 				"type": "CallExpression",
 				"callee": {
 					"type": "Identifier",
 					"name": "require"
 				},
-				"arguments": {
-					"type": "Literal",
-					"value": str.name,
-					"raw": str.name
-				}
-			})
+				"arguments": [str]
+			}),
+			"kind": "var"
 		}
 	}
 
@@ -373,7 +383,7 @@ Literal
 	= NumLiteral / StringLiteral / BooleanLiteral
 
 NumLiteral
-	= literal:([0-9]+ / [0-9]* "." [0-9]+) ("e" [+-]? [0-9]+)?
+	= literal:DecimalIntegerLiteral "." DecimalDigit*
 	{
 		return {
 			"type": "Literal",
@@ -381,6 +391,16 @@ NumLiteral
 			"raw": text()
 		};
 	}
+
+DecimalIntegerLiteral
+	= "0"
+	/ NonZeroDigit DecimalDigit*
+
+DecimalDigit
+	= [0-9]
+
+NonZeroDigit
+	= [1-9]
 
 StringLiteral
 	= "'" literal:SourceCharacterNoQuote1* "'"
@@ -498,8 +518,8 @@ AssignmentExpression
 		};
 	}
 
-MemberExpression
-	= object:Identifier "." property:Identifier
+MemberExpression "member expression"
+	= object:(thisValue / Identifier) "." property:Identifier
 	{
 		return {
 			"type": "MemberExpression",
@@ -508,7 +528,7 @@ MemberExpression
 			"property": property
 		}
 	}
-	/ object:Identifier "[" property:Expression "]"
+	/ object:(thisValue / Identifier) "[" property:Expression "]"
 	{
 		return {
 			"type": "MemberExpression",

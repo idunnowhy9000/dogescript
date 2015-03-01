@@ -6,7 +6,7 @@
 
 This is an implementation of the best new compile-to-JS language, dogescript. Wow.
 
-**Note that not everything works in this implementation, including raw JS code.**
+**Note that not everything works in this implementation, including comments**
 
 ```
     wow
