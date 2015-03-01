@@ -1,4 +1,6 @@
 {
+	var esprima = require("esprima");
+	
 	var keyMapping = {
 		"is": "===",
 		"not": "!==",
@@ -210,7 +212,8 @@ ReservedWord
 /** 2.1 Statements */
 /* Statement */
 Statement
-	= DeclarationStatement
+	= JSStatement
+	/ DeclarationStatement
 	/ WowStatement
 	/ ExpressionStatement
 	/ TrainedStatement
@@ -599,3 +602,12 @@ ForStatement
 	}
 
 ForNext = "next" / ';'
+
+/** 2.8 JS Statements */
+JSStatement
+	= "@{" __ source:(SourceCharacter)* __ "}@" (__ EOS)?
+	{
+		var jssource = source.join("");
+		var jsast = esprima.parse("{\n" + jssource + "\n}"); // parse in block
+		return jsast["body"][0];
+	}
