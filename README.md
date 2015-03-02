@@ -1,12 +1,14 @@
 ![dogescript](doge.gif)
 
-## dogescript 
+## dogescript 3
 
 (aka when Zach went insane)
 
 This is an implementation of the best new compile-to-JS language, dogescript. Wow.
 
-**Note that not everything works in this implementation, including comments**
+This is not affiliated with the official [dogescript orginization](https://github.com/dogescript) in any way.
+
+**Note that not everything works in this implementation**
 
 ```
     wow

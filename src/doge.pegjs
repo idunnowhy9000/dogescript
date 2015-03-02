@@ -62,8 +62,8 @@
 				}]
 			},
 			"prefix": true
-		},
-	}
+		}
+	};
 		
 	function buildList(first, rest, index) {
 		return [first].concat(extractList(rest, index));
@@ -122,9 +122,10 @@ start = __ program:Program __ {return program;}
 /** 1. Lexical Grammar */
 
 /* End of statement */
-EOS = __ ";"
-	/ _ SingleLineComment? LineTerminator
-	/ __ EOF
+EOS
+	= EOF
+	/ ";"
+	/ LineTerminator
 
 /* EOF */
 EOF "end of file"
@@ -161,8 +162,9 @@ LineTerminatorSequence "end of line"
 	/ "\u2029"
 
 /* Comment */
-Comment "comment"
-	= SingleLineComment / MultiLineComment
+Comment
+	= SingleLineComment
+	/ MultiLineComment
 
 /* Multi-line Comment */
 MultiLineComment
@@ -228,7 +230,7 @@ IdentifierName "identifier"
 
 /* Reserved Words */
 ReservedWord
-	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "maybe" / "bark"
+	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "maybe" / "bark" / "always"
 
 /** 2.1 Statements */
 /* Statement */
@@ -245,7 +247,7 @@ Statement
 
 /* Variable declarations */
 DeclarationStatement
-	= "very" __ iden:Identifier expr:(__ "is" __ Expression)? (__ EOS)?
+	= "very" __ iden:Identifier expr:(__ "is" __ Expression)? EOS
 	{
 		return {
 			"type": "VariableDeclaration",
@@ -253,7 +255,7 @@ DeclarationStatement
 			"kind": "var"
 		};
 	}
-	/ "always" __ iden:Identifier expr:(__ "is" __ Expression)? (__ EOS)?
+	/ "always" __ iden:Identifier expr:(__ "is" __ Expression)? EOS
 	{
 		return {
 			"type": "VariableDeclaration",
@@ -264,7 +266,7 @@ DeclarationStatement
 
 /* AssignmentStatement */
 AssignmentStatement
-	= iden:Identifier __ "as" __ expr:Expression (__ EOS)?
+	= iden:Identifier __ "as" __ expr:Expression EOS
 	{
 		return {
 			"type": "ExpressionStatement",
@@ -279,14 +281,14 @@ AssignmentStatement
 
 /* Wow: ends block */
 WowStatement
-	= "wow" _ v:Value (__ EOS)?
+	= "wow" _ v:Value EOS
 	{
 		return {
 			"type": "ReturnStatement",
 			"argument": v
 		}
 	}
-	/ "wow" (__ EOS)?
+	/ "wow" EOS
 	{
 		return {
 			"type": "ReturnStatement",
@@ -296,7 +298,7 @@ WowStatement
 
 /* ExpressionStatement */
 ExpressionStatement
-	= expr:Expression (__ EOS)?
+	= expr:Expression EOS
 	{
 		return {
 			"type": "ExpressionStatement",
@@ -306,7 +308,7 @@ ExpressionStatement
 
 /* Trained Statement */
 TrainedStatement
-	= "trained" (__ EOS)?
+	= "trained" EOS
 	{
 		return {
 			"type": "ExpressionStatement",
@@ -320,28 +322,26 @@ TrainedStatement
 
 /* ImportStatement */
 ImportStatement
-	= "so" __ str:StringLiteral as:(__ "as" __ Identifier)? (__ EOS)?
+	= "so" __ str:StringLiteral as:(__ "as" __ Identifier)? EOS
 	{
 		return {
-			"type": "VariableDeclaration",
-			"declarations": makeVarDeclare({
-				"type": "Identifier",
-				"name": moduleName(as != null ? as[3].name : str.value)
-			}, {
-				"type": "CallExpression",
-				"callee": {
-					"type": "Identifier",
-					"name": "require"
-				},
-				"arguments": [str]
-			}),
-			"kind": "var"
+			"type": "X-Require-Statement",
+			"name": moduleName(as != null ? as[3].name : str.value),
+			"argument": str.value
+		}
+	}
+	/ "so" __ str:Identifier as:(__ "as" __ Identifier)? EOS
+	{
+		return {
+			"type": "X-Require-Statement",
+			"name": moduleName(as != null ? as[3].name : str.name),
+			"argument": str.name
 		}
 	}
 
 /* DeboogerStatement */
 DeboogerStatement
-	= "debooger" (__ EOS)?
+	= "debooger" EOS
 	{
 		return {
 			"type": "DebuggerStatement"
@@ -350,7 +350,7 @@ DeboogerStatement
 
 /* Bark Statement */
 BarkStatement
-	= "bark" (__ EOS)?
+	= "bark" EOS
 	{
 		return {
 			"type": "BreakStatement"
@@ -393,11 +393,19 @@ Literal
 	= DSONLiteral / NumLiteral / StringLiteral / BooleanLiteral
 
 NumLiteral
-	= literal:DecimalIntegerLiteral "." DecimalDigit*
+	= DecimalIntegerLiteral ("." DecimalDigit*)?
 	{
 		return {
 			"type": "Literal",
-			"value": parseFloat(literal.join("")),
+			"value": parseFloat(text()),
+			"raw": JSON.stringify(text())
+		};
+	}
+	/ "." DecimalDigit+
+	{
+		return {
+			"type": "Literal",
+			"value": parseFloat(text()),
 			"raw": JSON.stringify(text())
 		};
 	}
@@ -437,7 +445,7 @@ DSONLiteral
 	= "{{" literal:DSONSourceCharacter* "}}"
 	{
 		return {
-			"type": "X-DSON-LITERAL",
+			"type": "X-DSON-Literal",
 			"source": literal.join("")
 		};
 	}
@@ -467,7 +475,7 @@ Expression
 
 /* "Algebra" expressions */
 Additive
-	= left:Multiplicative _ op:("not"/"smallerish"/"biggerish"/"smaller"/"bigger"/"+"/"-"/"shibeof"/"instanceof"/"is"/"==="/"!=="/"<="/">="/"<"/">") _ right:Additive
+	= left:Multiplicative __ op:("not"/"smallerish"/"biggerish"/"smaller"/"bigger"/"+"/"-"/"shibeof"/"instanceof"/"is"/"==="/"!=="/"<="/">="/"<"/">") __ right:Additive
 	{
 		return {
 			"type": "BinaryExpression",
@@ -479,7 +487,7 @@ Additive
 	/ Multiplicative
 
 Multiplicative
-	= left:Primary _ op:("*"/"/") _ right:Multiplicative
+	= left:Primary __ op:("*"/"/") __ right:Multiplicative
 	{
 		return {
 			"type": "BinaryExpression",
@@ -492,11 +500,11 @@ Multiplicative
 
 Primary
 	= Value
-	/ "(" _ additive:Additive _ ")" {return additive;}
+	/ "(" __ additive:Additive __ ")" {return additive;}
 
 /* Logical expressions */
 LogicalExpression
-	= left:Primary _ op:("and" / "or" / "&&" / "||") _ right:Primary
+	= left:Primary __ op:("and" / "or" / "&&" / "||") __ right:Primary
 	{
 		return {
 			"type": "LogicalExpression",
@@ -508,7 +516,7 @@ LogicalExpression
 	
 /* Unary expressions */
 UnaryExpression
-	= op:("dogeof" /"notrly" / "typeof" / "!") _ argument:Expression
+	= op:("dogeof" /"notrly" / "typeof" / "!") __ argument:Expression
 	{
 		return {
 			"type": "UnaryExpression",
@@ -520,7 +528,7 @@ UnaryExpression
 
 /* Function Call Expressions */
 FunctionCallExpression
-	= "plz" _ iden:(MemberExpression / Identifier) args:(_ "with" _ FunctionArguments)?
+	= "plz" __ iden:(MemberExpression / Identifier) args:(__ "with" __ FunctionArguments)?
 	{
 		return {
 			"type": "CallExpression",
@@ -531,7 +539,7 @@ FunctionCallExpression
 	
 /* New Expressions */
 NewExpression
-	= "new" _ iden:(MemberExpression / Identifier) args:(_ "with" _ FunctionArguments)?
+	= "new" __ iden:(MemberExpression / Identifier) args:(__ "with" __ FunctionArguments)?
 	{
 		return {
 			"type": "NewExpression",
@@ -542,7 +550,7 @@ NewExpression
 
 /* AssignmentExpression */
 AssignmentExpression
-	= left:Identifier _ op:("="/"+="/"-="/"*="/"/="/"as"/"more"/"less"/"lots"/"few") _ right:Expression
+	= left:Identifier _ op:("="/"+="/"-="/"*="/"/="/"as"/"more"/"less"/"lots"/"few") __ right:Expression
 	{
 		return {
 			"type": "AssignmentExpression",
@@ -562,7 +570,7 @@ MemberExpression "member expression"
 			"property": property
 		}
 	}
-	/ object:(thisValue / Identifier) "[" property:Expression "]"
+	/ object:(thisValue / Identifier) "[" __ property:Expression __ "]"
 	{
 		return {
 			"type": "MemberExpression",
@@ -574,9 +582,12 @@ MemberExpression "member expression"
 
 /** 2.4 Function declarations */
 FunctionDeclaration
-	= "such" _ iden:Identifier EOS block:(BlockNoWow EOS)? wow:WowStatement
+	= "such" _ iden:Identifier EOS __ block:BlockNoWow __ wow:WowStatement
 	{
-		fnBlock = extractOptional(block, 0) || [];
+		fnBlock = block || {
+			"type": "BlockStatement",
+			"body": []
+		};
 		fnBlock.body.push(wow);
 		
 		return {
@@ -591,9 +602,12 @@ FunctionDeclaration
 			"expression": false
 		}
 	}
-	/ "such" _ iden:Identifier _ "much" _ args:FunctionArguments EOS block:(BlockNoWow EOS)? WowStatement
+	/ "such" _ iden:Identifier _ "much" _ args:FunctionArguments EOS __ block:BlockNoWow __ wow:WowStatement
 	{
-		fnBlock = extractOptional(block, 0) || [];
+		fnBlock = block || {
+			"type": "BlockStatement",
+			"body": []
+		};
 		fnBlock.body.push(wow);
 		
 		return {
@@ -610,9 +624,9 @@ FunctionDeclaration
 	}
 
 FunctionArguments
-	= first:Expression rest:(_ Expression)*
+	= first:Expression rest:("," __ Expression)*
 	{
-		return buildList(first, rest, 1);
+		return buildList(first, rest, 2);
 	}
 
 /** 2.5 If Statements */
@@ -681,19 +695,16 @@ ForStatement
 
 ForNext = "next" / ';'
 
-/**
-	2.8 JS Statements,
-	Note that the node in this implementation is not an official Esprima node tree
-*/
+/** 2.8 JS Statements, */
 JSStatement
-	= "@'" source:SourceCharacterNoQuote1* "'" (__ EOS)?
+	= "@'" source:SourceCharacterNoQuote1* "'" EOS
 	{
 		return {
 			"type": "X-JS-Statement",
 			"source": source.join("")
 		}
 	}
-	/ '@"' source:SourceCharacterNoQuote2* '"' (__ EOS)?
+	/ '@"' source:SourceCharacterNoQuote2* '"' EOS
 	{
 		return {
 			"type": "X-JS-Statement",

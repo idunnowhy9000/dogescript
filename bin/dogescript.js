@@ -17,7 +17,7 @@ if (argv._[0]) {
 		var output = '';
 
 		for (var i = 0; i < lines.length; i++) {
-			output += compile(lines[i]);
+			output += compile(parser.parse(lines[i]));
 		}
 
 		if (argv.beautify) process.stdout.write(beautify(output, {break_chained_methods: false}) + '\n');
