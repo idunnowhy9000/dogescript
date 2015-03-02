@@ -582,7 +582,7 @@ MemberExpression "member expression"
 
 /** 2.4 Function declarations */
 FunctionDeclaration
-	= "such" _ iden:Identifier EOS __ block:BlockNoWow __ wow:WowStatement
+	= "such" __ iden:Identifier EOS __ block:BlockNoWow __ wow:WowStatement
 	{
 		fnBlock = block || {
 			"type": "BlockStatement",
@@ -602,7 +602,7 @@ FunctionDeclaration
 			"expression": false
 		}
 	}
-	/ "such" _ iden:Identifier _ "much" _ args:FunctionArguments EOS __ block:BlockNoWow __ wow:WowStatement
+	/ "such" __ iden:Identifier __ "much" __ args:FunctionArguments EOS __ block:BlockNoWow __ wow:WowStatement
 	{
 		fnBlock = block || {
 			"type": "BlockStatement",
@@ -631,21 +631,21 @@ FunctionArguments
 
 /** 2.5 If Statements */
 IfStatement
-	= "rly" __ test:Expression EOS block:(BlockNoWow EOS)? WowStatement
+	= "rly" __ test:Expression EOS block:BlockNoWow __ WowStatement
 	{
 		return {
 			"type": "IfStatement",
 			"test": test,
-			"consequent": extractOptional(block, 0),
+			"consequent": block,
 			"alternate": null
 		}
 	}
-	/ "rly" __ test:Expression EOS block:(BlockNoWow EOS)? __ alt:ElseStatement
+	/ "rly" __ test:Expression EOS block:BlockNoWow __ alt:ElseStatement
 	{
 		return {
 			"type": "IfStatement",
 			"test": test,
-			"consequent": extractOptional(block, 0),
+			"consequent": block,
 			"alternate": alt
 		}
 	}

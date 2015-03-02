@@ -1,11 +1,11 @@
 {
   "name": "dogescript-3",
-  "version": "2.4.1-pre",
+  "version": "2.4.22",
   "description": "wow so syntax very doge much future (an unofficial third version of dogescript)",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/remixz/dogescript.git"
+    "url": "https://github.com/idunnowhy9000/dogescript.git"
   },
   "keywords": [
     "wow",
