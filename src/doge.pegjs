@@ -266,7 +266,7 @@ DeclarationStatement
 
 /* AssignmentStatement */
 AssignmentStatement
-	= iden:Identifier __ "as" __ expr:Expression EOS
+	= iden:MemberExpression __ "as" __ expr:Expression EOS
 	{
 		return {
 			"type": "ExpressionStatement",
