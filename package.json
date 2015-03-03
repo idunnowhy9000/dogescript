@@ -1,6 +1,6 @@
 {
   "name": "dogescript-3",
-  "version": "2.4.23",
+  "version": "2.4.24",
   "description": "wow so syntax very doge much future (an unofficial third version of dogescript)",
   "main": "index.js",
   "repository": {
@@ -17,8 +17,7 @@
     "esprima": "^2.0.0",
     "estraverse": "^1.9.1",
     "js-beautify": "~1.5.1",
-    "optimist": "~0.6.0",
-    "pegjs": "~0.8.0"
+    "optimist": "~0.6.0"
   },
   "bin": "./bin/dogescript.js",
   "scripts": {
@@ -29,6 +28,7 @@
     "dist": "npm run build && npm run min"
   },
   "devDependencies": {
-    "uglify-js": "^2.4.13"
+    "uglify-js": "^2.4.13",
+    "pegjs": "~0.8.0"
   }
 }

@@ -281,7 +281,7 @@ AssignmentStatement
 
 /* Wow: ends block */
 WowStatement
-	= "wow" _ v:Expression? EOS
+	= ("wow"/"wow&") _ v:Expression? EOS
 	{
 		return {
 			"type": "ReturnStatement",
