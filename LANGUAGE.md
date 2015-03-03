@@ -91,7 +91,7 @@ Function declarations starts with `such`, the function's name, with optional arg
 All functions must have a `wow` statement. The syntax of it is `wow`, followed by an optional return parameter.
 
 ```
-such sum much arg1 arg2
+such sum much arg1, arg2
     shh Interior
 wow arg1 + arg2
 ```
@@ -101,7 +101,7 @@ wow arg1 + arg2
 Function calls starts with `plz`, the function's name, with optional arguments separated by a whitespace.
 
 ```
-plz sum with 1 2
+plz sum with 1, 2
 ```
 
 ### Branching
@@ -140,11 +140,34 @@ To be added.
 
 ### Trained Statement
 
-The `trained` statement toggles `"use strict"` mode on the code, the statement translates directly to the Javascript string literal `"use strict"`. Trained Statements starts with `trained`.
+The `trained` statement toggles `"use strict"` mode on the code, the statement translates directly to the Javascript string literal `"use strict"`.
 
 ### Bark Statement
 
 The `bark` statement breaks out of the current block.
+
+### Modules
+
+#### Importing
+
+The `so` statement imports a module using nodejs' `require` function.
+
+So statements starts with `so`, and the module to be imported. This will translate to a variable with the module's name being the identifier.
+
+```
+so "hello"                      shh imports the module "hello"
+so hello                        shh also imports the module "hello"
+```
+
+An additional `as` expression may be written. This will translate to a variable with the `as`'s identifier being the identifier.
+
+```
+so "hello" as h                 shh imports the module "hello" as the variable h
+```
+
+#### Exporting
+
+The `out` statement exports a module to `module.exports`
 
 ## "Built-in objects"
 

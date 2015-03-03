@@ -1,6 +1,6 @@
 {
   "name": "dogescript-3",
-  "version": "2.4.22",
+  "version": "2.4.23",
   "description": "wow so syntax very doge much future (an unofficial third version of dogescript)",
   "main": "index.js",
   "repository": {
@@ -8,8 +8,7 @@
     "url": "https://github.com/idunnowhy9000/dogescript.git"
   },
   "keywords": [
-    "wow",
-    "dogescript"
+    "wow", "dogescript", "doge"
   ],
   "author": "Zach Bruggeman <zachb@diy.org>",
   "license": "MIT",
