@@ -281,18 +281,11 @@ AssignmentStatement
 
 /* Wow: ends block */
 WowStatement
-	= "wow" _ v:Value EOS
+	= "wow" _ v:Expression? EOS
 	{
 		return {
 			"type": "ReturnStatement",
 			"argument": v
-		}
-	}
-	/ "wow" EOS
-	{
-		return {
-			"type": "ReturnStatement",
-			"argument": null
 		}
 	}
 
@@ -631,7 +624,7 @@ FunctionArguments
 
 /** 2.5 If Statements */
 IfStatement
-	= "rly" __ test:Expression EOS block:BlockNoWow __ WowStatement
+	= "rly" __ test:Expression EOS __ block:BlockNoWow __ IfWowStatement
 	{
 		return {
 			"type": "IfStatement",
@@ -640,7 +633,7 @@ IfStatement
 			"alternate": null
 		}
 	}
-	/ "rly" __ test:Expression EOS block:BlockNoWow __ alt:ElseStatement
+	/ "rly" __ test:Expression EOS __ block:BlockNoWow __ alt:ElseStatement
 	{
 		return {
 			"type": "IfStatement",
@@ -650,13 +643,15 @@ IfStatement
 		}
 	}
 
+IfWowStatement = "wow" EOS
+
 /** 2.5.1 Else Statements */
 ElseStatement
 	= "but" __ block:IfStatement
 	{
 		return block;
 	}
-	/ "but" __ block:BlockNoWow
+	/ "but" __ block:BlockNoWow IfWowStatement
 	{
 		return {
 			"type": "BlockStatement",
