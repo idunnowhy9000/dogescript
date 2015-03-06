@@ -8,6 +8,8 @@ This is an implementation of the best new compile-to-JS language, dogescript. Wo
 
 This is not affiliated with the official [dogescript orginization](https://github.com/dogescript) in any way.
 
+All rights of dogescript goes to Zach a.k.a [remixz](https://github.com/remixz)
+
 **Note that not everything works in this implementation**
 
 ```
