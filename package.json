@@ -8,7 +8,9 @@
     "url": "https://github.com/idunnowhy9000/dogescript.git"
   },
   "keywords": [
-    "wow", "dogescript", "doge"
+    "wow",
+    "dogescript",
+    "doge"
   ],
   "author": "Zach Bruggeman <zachb@diy.org>",
   "license": "MIT",
@@ -16,7 +18,8 @@
     "escodegen": "~1.6.1",
     "esprima": "^2.0.0",
     "estraverse": "^1.9.1",
-    "optimist": "~0.6.0"
+    "optimist": "~0.6.0",
+    "pegjs": "^0.8.0"
   },
   "bin": "./bin/dogescript.js",
   "scripts": {
