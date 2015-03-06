@@ -659,7 +659,7 @@ FunctionArguments
 
 /** 2.5 If Statements */
 IfStatement
-	= "rly" __ test:Expression EOS __ block:BlockNoWow? __ IfWowStatement EOS
+	= "rly" __ test:Expression EOS __ block:BlockNoWow? __ IfWowStatement
 	{
 		return {
 			"type": "IfStatement",
@@ -668,7 +668,7 @@ IfStatement
 			"alternate": null
 		}
 	}
-	/ "rly" __ test:Expression EOS __ block:BlockNoWow? __ alt:ElseStatement EOS
+	/ "rly" __ test:Expression EOS __ block:BlockNoWow? __ alt:ElseStatement
 	{
 		return {
 			"type": "IfStatement",
