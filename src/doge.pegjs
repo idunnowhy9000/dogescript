@@ -687,12 +687,12 @@ ElseStatement
 
 /** 2.6 While Statements */
 WhileStatement
-	= "many" __ test:Expression EOS block:(BlockNoWow? EOS)? __ WowStatement
+	= "many" __ test:Expression EOS block:BlockNoWow? __ WowStatement
 	{
 		return {
 			"type": "WhileStatement",
 			"test": test,
-			"body": extractOptional(block, 0)
+			"body": block
 		}
 	}
 
