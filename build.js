@@ -11,8 +11,5 @@ var pegfile = pegjs.buildParser(fs.readFileSync(path.join(__dirname,OPTIONS.PEG_
 	"output": "source"
 });
 
-// insert
-pegfile = "module.exports = " + pegfile;
-pegfile += ";";
-
+pegfile = "module.exports = " + pegfile + ";\n";
 fs.writeFileSync(path.join(__dirname,OPTIONS.PEG_OUT), pegfile, {"encoding": "utf8"});

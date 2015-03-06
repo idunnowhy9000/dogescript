@@ -6,22 +6,15 @@ var util     = require('util');
 var stream   = require('stream');
 var repl     = require('repl');
 var argv     = require('optimist').usage('Usage: dogescript <file>').argv;
-var beautify = require('js-beautify').js_beautify;
 
 var parser   = require('../lib/parser');
 var compile  = require('../lib/compile');
 
 if (argv._[0]) {
 	var file = fs.readFile(path.resolve(process.cwd(), argv._[0]), {encoding: 'utf-8'}, function (err, script) {
-		var lines = script.split(/\r?\n/);
-		var output = '';
+		var output = compile(parser.parse(script.toString()));
 
-		for (var i = 0; i < lines.length; i++) {
-			output += compile(parser.parse(lines[i]));
-		}
-
-		if (argv.beautify) process.stdout.write(beautify(output, {break_chained_methods: false}) + '\n');
-		else process.stdout.write(output);
+		process.stdout.write(output);
 	});
 } else {
 	// streamy inheritance stuff

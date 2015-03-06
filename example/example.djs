@@ -13,7 +13,7 @@ so boring as wow
 
 very dogescript is 'such messy; very doge-friendly'
 
-such woof much foo bar bat
+such woof much foo, bar, bat
     plz console.loge with foo
     such nested
         plz console.loge with ['so', 'wow']

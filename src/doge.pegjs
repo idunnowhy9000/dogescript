@@ -41,28 +41,14 @@
 					},
 					"property": {
 						"type": "Identifier",
-						"name": "round"
+						"name": "random"
 					}
 				},
-				"arguments": [{
-					"type": "CallExpression",
-					"callee": {
-						"type": "MemberExpression",
-						"computed": false,
-						"object": {
-							"type": "Identifier",
-							"name": "Math"
-						},
-						"property": {
-							"type": "Identifier",
-							"name": "random"
-						}
-					},
-					"arguments": []
-				}]
+				"arguments": []
 			},
 			"prefix": true
-		}
+		},
+		"prefix": true
 	};
 		
 	function buildList(first, rest, index) {
@@ -175,7 +161,7 @@ MultiLineCommentNoLineTerminator
 
 /* Single-line Comment */
 SingleLineComment
-	= "shh" WhiteSpace (!LineTerminator SourceCharacter)*
+	= "shh" (!LineTerminator SourceCharacter)*
 
 /** Skipped */
 
@@ -222,9 +208,12 @@ Identifier
 IdentifierName "identifier"
 	= first:("$"/"_")? rest:([a-zA-Z0-9])+
 	{
+		var _t = optionalStr(first) + rest.join("");
+		if (_t === "maybe") return maybeOP;
+		
 		return {
 			"type": "Identifier",
-			"name": toId(optionalStr(first) + rest.join(""))
+			"name": toId(_t)
 		};
 	}
 
@@ -243,7 +232,7 @@ Statement
 	/ ImportStatement
 	/ DeboogerStatement
 	/ BarkStatement
-	/ JSStatement
+	/* JSStatement */
 
 /* Variable declarations */
 DeclarationStatement
@@ -352,27 +341,22 @@ BarkStatement
 
 /** 2.1.1 Blocks */
 BlockNoWow
-	= src:(SourceElementNoWow (__ SourceElementNoWow)*)?
-	{
-		if (src == null) {
-			return {
-				"type": "BlockStatement",
-				"body": []
-			}
-		}
-		
+	= first:SourceElementNoWow rest:(__ SourceElementNoWow)*
+	{		
 		return {
 			"type": "BlockStatement",
-			"body": buildList(src[0], src[1], 1)
+			"body": buildList(first, rest, 1)
 		}
 	}
 
 /** 2.2 Values */
 Value
 	= thisValue
-	/ Literal
 	/ Identifier
-	/ MemberExpression
+	/ DSONLiteral
+	/ NumLiteral
+	/ StringLiteral
+	/ ArrayLiteral
 
 thisValue
 	= "this"
@@ -381,9 +365,6 @@ thisValue
 			"type": "ThisExpression"
 		};
 	}
-
-Literal
-	= DSONLiteral / NumLiteral / StringLiteral / BooleanLiteral
 
 NumLiteral
 	= DecimalIntegerLiteral ("." DecimalDigit*)?
@@ -443,61 +424,73 @@ DSONLiteral
 		};
 	}
 
-BooleanLiteral
-	= bool:("true"/"false"/"maybe")
+ArrayLiteral
+	= "[" e:ArrayElements "]"
 	{
-		if (bool === "maybe") return maybeOP;
-		
 		return {
-			"type": "Identifier",
-			"name": bool
+			"type": "ArrayExpression",
+			"elements": e
 		}
 	}
+
+ArrayElements
+	= first:ArrayElement rest:("," __ ArrayElement)* { return buildList(first, rest, 2); }
+
+ArrayElement
+	= Expression
+	/ {return null;}
 
 /** 2.3 Expression */
 /* Expressions */
 Expression
-	= MemberExpression
-	/ FunctionCallExpression
+	= FunctionCallExpression
 	/ NewExpression
 	/ AssignmentExpression
-	/ UnaryExpression
 	/ LogicalExpression
-	/ Additive
+	/ ComparisonExpression
+	/ AdditiveExpression
+	/ UnaryExpression
 	/ Value
 
 /* "Algebra" expressions */
-Additive
-	= left:Multiplicative __ op:("not"/"smallerish"/"biggerish"/"smaller"/"bigger"/"+"/"-"/"shibeof"/"instanceof"/"is"/"==="/"!=="/"<="/">="/"<"/">") __ right:Additive
+MultiplicativeExpression
+	= left:Primary __ op:MultiplicativeOperator __ right:MultiplicativeExpression
 	{
 		return {
 			"type": "BinaryExpression",
 			"operator": toOP(op),
 			"left": left,
 			"right": right
-		};
-	}
-	/ Multiplicative
-
-Multiplicative
-	= left:Primary __ op:("*"/"/") __ right:Multiplicative
-	{
-		return {
-			"type": "BinaryExpression",
-			"operator": op,
-			"left": left,
-			"right": right
-		};
+		}
 	}
 	/ Primary
 
+MultiplicativeOperator
+	= "*" / "/" / "%"
+
+AdditiveExpression
+	= left:MultiplicativeExpression __ op:AdditiveOperator __ right:AdditiveExpression
+	{
+		return {
+			"type": "BinaryExpression",
+			"operator": toOP(op),
+			"left": left,
+			"right": right
+		}
+	}
+	/ MultiplicativeExpression
+
+AdditiveOperator
+	= "+" / "-"
+
 Primary
 	= Value
-	/ "(" __ additive:Additive __ ")" {return additive;}
+	/ UnaryExpression
+	/ "(" __ left:Expression __ ")" {return left;}
 
 /* Logical expressions */
 LogicalExpression
-	= left:Primary __ op:("and" / "or" / "&&" / "||") __ right:Primary
+	= left:AdditiveExpression __ op:LogicalOperator __ right:AdditiveExpression
 	{
 		return {
 			"type": "LogicalExpression",
@@ -506,10 +499,13 @@ LogicalExpression
 			"right": right
 		}
 	}
+
+LogicalOperator
+	= ("and" / "or" / "&&" / "||")
 	
 /* Unary expressions */
 UnaryExpression
-	= op:("dogeof" /"notrly" / "typeof" / "!") __ argument:Expression
+	= op:UnaryOperator __ argument:MemberExpression
 	{
 		return {
 			"type": "UnaryExpression",
@@ -519,9 +515,28 @@ UnaryExpression
 		}
 	}
 
+UnaryOperator
+	= "dogeof" /"notrly" / "typeof" / "!"
+
+/* Comparison */
+ComparisonExpression
+	= left:AdditiveExpression __ op:ComparisonOperator __ right:AdditiveExpression
+	{
+		return {
+			"type": "BinaryExpression",
+			"operator": toOP(op),
+			"left": left,
+			"right": right
+		}
+	}
+
+ComparisonOperator
+	= "not" / "smallerish" / "smaller" / "biggerish" / "bigger" / "is"
+	/ "!==" / ">=" / ">" / "<=" / "<" / "==="
+
 /* Function Call Expressions */
 FunctionCallExpression
-	= "plz" __ iden:(MemberExpression / Identifier) args:(__ "with" __ FunctionArguments)?
+	= "plz" __ iden:MemberExpression args:(__ "with" __ FunctionArguments)?
 	{
 		return {
 			"type": "CallExpression",
@@ -532,7 +547,7 @@ FunctionCallExpression
 	
 /* New Expressions */
 NewExpression
-	= "new" __ iden:(MemberExpression / Identifier) args:(__ "with" __ FunctionArguments)?
+	= "new" __ iden:MemberExpression args:(__ "with" __ FunctionArguments)?
 	{
 		return {
 			"type": "NewExpression",
@@ -543,7 +558,7 @@ NewExpression
 
 /* AssignmentExpression */
 AssignmentExpression
-	= left:Identifier _ op:("="/"+="/"-="/"*="/"/="/"as"/"more"/"less"/"lots"/"few") __ right:Expression
+	= left:Identifier _ op:AssignmentOperator __ right:Expression
 	{
 		return {
 			"type": "AssignmentExpression",
@@ -553,29 +568,47 @@ AssignmentExpression
 		};
 	}
 
-MemberExpression "member expression"
-	= object:(thisValue / Identifier) "." property:Identifier
-	{
-		return {
-			"type": "MemberExpression",
-			"computed": false,
-			"object": object,
-			"property": property
+AssignmentOperator
+	= "as" / "more" / "less" / "lots" / "few"
+	/ "=" / "+=" / "-=" / "*=" / "/="
+
+MemberExpression
+	= first:(
+		Primary
+		/ FunctionCallExpression
+		/ "new" __ callee:MemberExpression (__ "with" __ FunctionArguments)?
+		{
+			return {
+				"type": "NewExpression",
+				"callee": iden,
+				"arguments": extractOptional(args, 3) || []
+			}
 		}
-	}
-	/ object:(thisValue / Identifier) "[" __ property:Expression __ "]"
-	{
-		return {
-			"type": "MemberExpression",
-			"computed": true,
-			"object": object,
-			"property": property
+	)
+	rest: (
+		__ "[" __ property:Expression __ "]" {
+			return {"property": property, "computed": true}
 		}
+		/ __ "." __ property:IdentifierName {
+			return {"property": property, "computed": false}
+		}
+	)*
+	{
+		var result = first, i;
+		for (i = 0; i < rest.length; i++){
+			result = {
+				"type": "MemberExpression",
+				"object": result,
+				"property": rest[i].property,
+				"computed": rest[i].computed,
+			};
+		}
+		return result;
 	}
 
 /** 2.4 Function declarations */
 FunctionDeclaration
-	= "such" __ iden:Identifier EOS __ block:BlockNoWow __ wow:WowStatement
+	= "such" __ iden:Identifier EOS __ block:BlockNoWow? __ wow:WowStatement
 	{
 		fnBlock = block || {
 			"type": "BlockStatement",
@@ -595,7 +628,7 @@ FunctionDeclaration
 			"expression": false
 		}
 	}
-	/ "such" __ iden:Identifier __ "much" __ args:FunctionArguments EOS __ block:BlockNoWow __ wow:WowStatement
+	/ "such" __ iden:Identifier __ "much" __ args:FunctionArguments EOS __ block:BlockNoWow? __ wow:WowStatement
 	{
 		fnBlock = block || {
 			"type": "BlockStatement",
@@ -624,7 +657,7 @@ FunctionArguments
 
 /** 2.5 If Statements */
 IfStatement
-	= "rly" __ test:Expression EOS __ block:BlockNoWow __ IfWowStatement
+	= "rly" __ test:Expression EOS __ block:BlockNoWow? __ IfWowStatement EOS
 	{
 		return {
 			"type": "IfStatement",
@@ -633,7 +666,7 @@ IfStatement
 			"alternate": null
 		}
 	}
-	/ "rly" __ test:Expression EOS __ block:BlockNoWow __ alt:ElseStatement
+	/ "rly" __ test:Expression EOS __ block:BlockNoWow? __ alt:ElseStatement EOS
 	{
 		return {
 			"type": "IfStatement",
@@ -647,21 +680,12 @@ IfWowStatement = "wow" EOS
 
 /** 2.5.1 Else Statements */
 ElseStatement
-	= "but" __ block:IfStatement
-	{
-		return block;
-	}
-	/ "but" __ block:BlockNoWow IfWowStatement
-	{
-		return {
-			"type": "BlockStatement",
-			"body": block
-		}
-	}
+	= "but" __ block:IfStatement {return block;}
+	/ "but" __ block:BlockNoWow? __ IfWowStatement {return block;}
 
 /** 2.6 While Statements */
 WhileStatement
-	= "many" __ test:Expression EOS block:(BlockNoWow EOS)? __ WowStatement
+	= "many" __ test:Expression EOS block:(BlockNoWow? EOS)? __ WowStatement
 	{
 		return {
 			"type": "WhileStatement",

@@ -62,6 +62,8 @@ loud
 
 ### Embedded Javascript
 
+**Not present in this implementation**
+
 Javascript **statements** may be embedded directly into dogescript. To embed Javascript, start with `@"` or `@'`, the Javascript code and end with `"` or `'` like strings.
 
 Embedded Javascript is a method to fill in the holes that dogescript doesn't fill (think of it like "polyfilling" languages).
