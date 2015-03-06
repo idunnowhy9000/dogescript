@@ -219,7 +219,8 @@ IdentifierName "identifier"
 
 /* Reserved Words */
 ReservedWord
-	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "maybe" / "bark" / "always"
+	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "maybe" / "bark" / "always" / "notrly" / "dogeof"
+	/ "typeof"
 
 /** 2.1 Statements */
 /* Statement */
@@ -505,7 +506,7 @@ LogicalOperator
 	
 /* Unary expressions */
 UnaryExpression
-	= op:UnaryOperator __ argument:MemberExpression
+	= op:UnaryOperator __ argument:Value
 	{
 		return {
 			"type": "UnaryExpression",
@@ -516,7 +517,8 @@ UnaryExpression
 	}
 
 UnaryOperator
-	= "dogeof" /"notrly" / "typeof" / "!"
+	= "dogeof" /"notrly"
+	/ "typeof" / "!"
 
 /* Comparison */
 ComparisonExpression
