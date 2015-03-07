@@ -77,14 +77,6 @@
 		return optional ? optional[index] : null;
 	}
 	
-	function makeVarDeclare(iden, expr) {
-		return [{
-			"type": "VariableDeclarator",
-			"id": iden,
-			"init": expr == null ? null : expr
-		}];
-	}
-	
 	function toOP(str) {
 		return keyMapping[str] || str;
 	}
@@ -108,7 +100,7 @@ start = __ program:Program __ {return program;}
 /** 1. Lexical Grammar */
 
 /* End of statement */
-EOS
+EOS "end of statement"
 	= EOF
 	/ ";"
 	/ LineTerminator
@@ -118,7 +110,8 @@ EOF "end of file"
 	= !.
 
 /* Source Character */
-SourceCharacter = .
+SourceCharacter "any character"
+	= .
 
 /* SourceCharacter without line terminator */
 SourceCharacterNoTerm = !LineTerminator char:. {return char;}
@@ -137,10 +130,10 @@ WhiteSpace "whitespace"
 	/ [\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]
 
 /* Line Terminator */
-LineTerminator = ("\n"/"\r"/"\u2028"/"\u2029")
+LineTerminator "end of line" = ("\n"/"\r"/"\u2028"/"\u2029")
 
 /* Line Terminator Sequence */
-LineTerminatorSequence "end of line"
+LineTerminatorSequence "end of line sequence"
 	= "\n"
 	/ "\r\n"
 	/ "\r"
@@ -148,7 +141,7 @@ LineTerminatorSequence "end of line"
 	/ "\u2029"
 
 /* Comment */
-Comment
+Comment "comment"
 	= SingleLineComment
 	/ MultiLineComment
 
@@ -200,27 +193,6 @@ SourceElement
 
 /* Source Element without Wow Statement */
 SourceElementNoWow = !WowStatement b:SourceElement {return b;}
-	
-/* Identifiers */
-Identifier
-	= !ReservedWord name:IdentifierName {return name;}
-
-IdentifierName "identifier"
-	= first:("$"/"_")? rest:([a-zA-Z0-9])+
-	{
-		var _t = optionalStr(first) + rest.join("");
-		if (_t === "maybe") return maybeOP;
-		
-		return {
-			"type": "Identifier",
-			"name": toId(_t)
-		};
-	}
-
-/* Reserved Words */
-ReservedWord
-	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "maybe" / "bark" / "always" / "notrly" / "dogeof"
-	/ "typeof"
 
 /** 2.1 Statements */
 /* Statement */
@@ -241,7 +213,13 @@ DeclarationStatement
 	{
 		return {
 			"type": "VariableDeclaration",
-			"declarations": makeVarDeclare(iden, extractOptional(expr, 3)),
+			"declarations": [
+				{
+					"type": "VariableDeclarator",
+					"id": iden,
+					"init": extractOptional(expr, 3)
+				}
+			],
 			"kind": "var"
 		};
 	}
@@ -249,7 +227,13 @@ DeclarationStatement
 	{
 		return {
 			"type": "VariableDeclaration",
-			"declarations": makeVarDeclare(iden, extractOptional(expr, 3)),
+			"declarations": [
+				{
+					"type": "VariableDeclarator",
+					"id": iden,
+					"init": extractOptional(expr, 3)
+				}
+			],
 			"kind": "const"
 		};
 	}
@@ -355,7 +339,7 @@ Value
 	= thisValue
 	/ Identifier
 	/ DSONLiteral
-	/ NumLiteral
+	/ NumericLiteral
 	/ StringLiteral
 	/ ArrayLiteral
 
@@ -367,22 +351,51 @@ thisValue
 		};
 	}
 
-NumLiteral
-	= DecimalIntegerLiteral ("." DecimalDigit*)?
+/* Identifiers */
+Identifier
+	= !ReservedWord name:IdentifierName {return name;}
+
+IdentifierName "identifier"
+	= first:IdentifierStart rest:IdentifierPart*
 	{
+		var _t = first + rest.join("");
+		if (_t === "maybe") return maybeOP;
+		
 		return {
-			"type": "Literal",
-			"value": parseFloat(text()),
-			"raw": JSON.stringify(text())
+			"type": "Identifier",
+			"name": toId(_t)
 		};
 	}
-	/ "." DecimalDigit+
+
+IdentifierStart
+	= [a-zA-Z] / "$" / "_"
+
+IdentifierPart
+	= IdentifierStart
+	/ [0-9]
+
+/* Reserved Words */
+ReservedWord
+	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "bark" / "always" / "notrly" / "dogeof"
+	/ "typeof"
+
+/** Numeric Literals */
+NumericLiteral
+	= literal:DecimalLiteral !(IdentifierStart / DecimalDigit) {return literal;}
+
+/* Decimal Literals */
+DecimalLiteral
+	= DecimalIntegerLiteral "." DecimalDigit* ExponentPart?
 	{
-		return {
-			"type": "Literal",
-			"value": parseFloat(text()),
-			"raw": JSON.stringify(text())
-		};
+		return { "type": "Literal", "value": parseFloat(text()), "raw": JSON.stringify(text()) };
+	}
+	/ "." DecimalDigit+ ExponentPart?
+	{
+		return { "type": "Literal", "value": parseFloat(text()), "raw": JSON.stringify(text()) };
+	}
+	/ DecimalIntegerLiteral+ ExponentPart?
+	{
+		return { "type": "Literal", "value": parseFloat(text()), "raw": JSON.stringify(text()) };
 	}
 
 DecimalIntegerLiteral
@@ -395,6 +408,17 @@ DecimalDigit
 NonZeroDigit
 	= [1-9]
 
+/** ExponentPart */
+ExponentPart
+	= ExponentIndicator SignedInteger
+
+ExponentIndicator
+	= "e"i / "very"i
+
+SignedInteger
+	= [+-]? DecimalDigit+
+
+/* String Literals */
 StringLiteral
 	= "'" literal:SourceCharacterNoQuote1* "'"
 	{
@@ -413,26 +437,68 @@ StringLiteral
 		};
 	}
 
-DSONSourceCharacter
-	= !"}" char:SourceCharacter {return char;}
-
+/** DSON Literals */
 DSONLiteral
-	= "{{" literal:DSONSourceCharacter* "}}"
+	= "{{" __ obj:DSONObject __ "}}" {return obj}
+
+DSONObject
+	= "such" __ member:DSONMembers? __ "wow"
 	{
 		return {
-			"type": "X-DSON-Literal",
-			"source": literal.join("")
-		};
+			"type": "ObjectExpression",
+			"properties": member
+		}
 	}
 
-ArrayLiteral
-	= "[" e:ArrayElements "]"
+DSONMembers
+	= first:DSONPair rest:(__ DSONMemberSeparator __ DSONPair)*
+	{
+		return buildList(first, rest, 3);
+	}
+
+DSONMemberSeparator
+	= "," / "." / "!" / "?"
+
+DSONPair
+	= key:StringLiteral __ "is" __ value:DSONValue
+	{
+		return {
+			"key": key,
+			"value": value,
+			"kind": "init"
+		}
+	}
+
+DSONArray
+	= "so" __ elements:DSONArrayElements? __ "many"
 	{
 		return {
 			"type": "ArrayExpression",
-			"elements": e
+			"elements": elements
 		}
 	}
+
+DSONArrayElements
+	= first:DSONValue rest:(__ "and" __ DSONValue)*
+	{
+		return buildList(first, rest, 3);
+	}
+
+DSONValue
+	= StringLiteral
+	/ NumericLiteral
+	/ DSONObject
+	/ DSONArray
+	/ "yes"
+	/ "no"
+	/ "empty"
+
+/** Array Literals */
+ArrayLiteral
+	= "[" __ "]"
+	{ return { "type": "ArrayExpression", "elements": [] }; }
+	/ "[" e:ArrayElements "]"
+	{ return { "type": "ArrayExpression", "elements": e }; }
 
 ArrayElements
 	= first:ArrayElement rest:("," __ ArrayElement)* { return buildList(first, rest, 2); }
@@ -503,10 +569,15 @@ LogicalExpression
 
 LogicalOperator
 	= ("and" / "or" / "&&" / "||")
-	
+
+LeftHandSideExpression
+	= FunctionCallExpression / NewExpression
+
+
+
 /* Unary expressions */
 UnaryExpression
-	= op:UnaryOperator __ argument:Value
+	= op:UnaryPrefixOperator __ argument:Value
 	{
 		return {
 			"type": "UnaryExpression",
@@ -516,7 +587,7 @@ UnaryExpression
 		}
 	}
 
-UnaryOperator
+UnaryPrefixOperator
 	= "dogeof" /"notrly"
 	/ "typeof" / "!"
 
@@ -560,7 +631,7 @@ NewExpression
 
 /* AssignmentExpression */
 AssignmentExpression
-	= left:Identifier _ op:AssignmentOperator __ right:Expression
+	= left:LeftHandSideExpression _ op:AssignmentOperator __ right:Expression
 	{
 		return {
 			"type": "AssignmentExpression",
@@ -591,7 +662,7 @@ MemberExpression
 		__ "[" __ property:Expression __ "]" {
 			return {"property": property, "computed": true}
 		}
-		/ __ "." __ property:IdentifierName {
+		/ __ ("." / "dose") __ property:IdentifierName {
 			return {"property": property, "computed": false}
 		}
 	)*
