@@ -23,7 +23,7 @@ All rights of dogescript goes to Zach a.k.a [remixz](https://github.com/remixz)
 
 ### Installation
 
-`npm install -g dogescript`
+`npm install -g dogescript-3`
 
 ### Usage
 

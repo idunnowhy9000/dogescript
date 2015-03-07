@@ -446,7 +446,7 @@ DSONObject
 	{
 		return {
 			"type": "ObjectExpression",
-			"properties": member
+			"properties": optionalList(member)
 		}
 	}
 
@@ -489,9 +489,9 @@ DSONValue
 	/ NumericLiteral
 	/ DSONObject
 	/ DSONArray
-	/ "yes"
-	/ "no"
-	/ "empty"
+	/ "yes" {return {"type": "Identifier", "name": "true"}}
+	/ "no" {return {"type": "Identifier", "name": "false"}}
+	/ "empty" {return {"type": "Identifier", "name": "null"}}
 
 /** Array Literals */
 ArrayLiteral

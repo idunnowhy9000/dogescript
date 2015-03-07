@@ -65,9 +65,9 @@ very regex2 is new RegExp with 'doge', 'g'
 
 very arr is new Array with 0
 
-obj is new Object
+obj as new Object
 
-module.exports is woof
+module.exports as woof
 
 shh example http server
 so http
@@ -77,8 +77,8 @@ http dose createServer with much req res
 wow&
 .plz listen with 8080
 
-windoge.doge is 'so global, no scope wow'
-very dogelement is plz dogeument.createElement with 'doge'
+windoge.doge as 'so global, no scope wow'
+very dogelement as plz dogeument.createElement with 'doge'
 
 very multiObj is obj
   test: ['wow']
