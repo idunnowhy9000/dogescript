@@ -433,7 +433,7 @@ ExponentPart
 	= ExponentIndicator SignedInteger
 
 ExponentIndicator
-	= "e"i / "very"i
+	= "e"i
 
 SignedInteger
 	= [+-]? DecimalDigit+
