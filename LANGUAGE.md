@@ -1,6 +1,6 @@
 # dogescript spec (2.4.0)
 
-**dogescript** is a programming language made by [remixz](https://github.com/remixz) when he gone insane. **dogescript** is named **dogescript** without uppercase letters.
+**dogescript** is a programming language made by [remixz](https://github.com/remixz) when he gone insane. **dogescript** is preferably named **dogescript** without uppercase letters.
 
 Below is the official (unofficial), new specification of **dogescript**
 
@@ -168,6 +168,8 @@ so "hello" as h                 shh imports the module "hello" as the variable h
 ```
 
 #### Exporting
+
+**Not (yet) present in this implementation**
 
 The `out` statement exports a module to `module.exports`
 

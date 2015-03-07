@@ -6,6 +6,8 @@
 
 This is an implementation of the best new compile-to-JS language, dogescript. Wow.
 
+Many things has been added in this implementation, such as, "native" DSON, new operators, and a rebuilt parser(!)
+
 This is not affiliated with the official [dogescript orginization](https://github.com/dogescript) in any way.
 
 All rights of dogescript goes to Zach a.k.a [remixz](https://github.com/remixz)
@@ -29,19 +31,14 @@ All rights of dogescript goes to Zach a.k.a [remixz](https://github.com/remixz)
 
 #### Command Line
 
-`dogescript` without a file launches a REPL.
+`dogescript-3` without a file launches a REPL.
 
-`dogescript location/to/dogescript.djs` pipes the result to stdout. Use a command like `dogescript dogescript.djs > compiled.js` to save to a file.
-
-Options:
-
-* `--beautify` - Runs the code through a beautifier.
+`dogescript-3 location/to/dogescript.djs` pipes the result to stdout. Use a command like `dogescript-3 dogescript.djs > compiled.js` to save to a file.
 
 #### Javascript
 
-`dogescript(file, beauty)`
+`dogescript(file)`
 * `file` - A string of Dogescript.
-* `beauty` - A boolean, set to true if you want the output to be ran through a beautifier.
 
 ### Language documentation
 
@@ -71,7 +68,7 @@ Options:
 
 ### Contributors
 
-Dogescript has been made possible thanks to the contributions of many people. Thank you to everyone who has contributed in some way!
+The "original" [dogescript](https://github.com/dogescript/dogescript) has been made possible thanks to the contributions of many people. Thank you to everyone who has contributed in some way!
 
 ```bash
 $ git log --format='%aN' | sort -u
