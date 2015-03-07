@@ -87,6 +87,10 @@
 		mod = mod.replace(/-/g, '_');
 		return mod;
 	}
+	
+	function parseDecLiteral(str) {
+		return str.replace(/(very|VERY)/, "e");
+	}
 }
 
 start = __ program:Program __ {return program;}
@@ -193,6 +197,7 @@ Statement
 	/ ExpressionStatement
 	/ TrainedStatement
 	/ ImportStatement
+	/ ExportStatement
 	/ DeboogerStatement
 	/ BarkStatement
 	/* JSStatement */
@@ -313,6 +318,32 @@ ImportStatement
 		}
 	}
 
+/* Export Statement */
+ExportStatement
+	= "out" __ expr:Expression
+	{
+		return {
+			"type": "ExpressionStatement",
+			"expression": {
+				"type": "AssignmentExpression",
+				"operator": "=",
+				"left": {
+					"type": "MemberExpression",
+					"computed": false,
+					"object": {
+						"type": "Identifier",
+						"name": "module"
+					},
+					"property": {
+						"type": "Identifier",
+						"name": "exports"
+					}
+				},
+				"right": expr
+			}
+		};
+	}
+
 /* DeboogerStatement */
 DeboogerStatement
 	= "debooger" EOS
@@ -407,15 +438,27 @@ NumericLiteral
 DecimalLiteral
 	= DecimalIntegerLiteral "." DecimalDigit* ExponentPart?
 	{
-		return { "type": "Literal", "value": parseFloat(text()), "raw": JSON.stringify(text()) };
+		return {
+			"type": "Literal",
+			"value": parseFloat(parseDecLiteral(text())),
+			"raw": "\"" + parseDecLiteral(text()) + "\""
+		};
 	}
 	/ "." DecimalDigit+ ExponentPart?
 	{
-		return { "type": "Literal", "value": parseFloat(text()), "raw": JSON.stringify(text()) };
+		return {
+			"type": "Literal",
+			"value": parseFloat(parseDecLiteral(text())),
+			"raw": "\"" + parseDecLiteral(text()) + "\""
+		};
 	}
 	/ DecimalIntegerLiteral+ ExponentPart?
 	{
-		return { "type": "Literal", "value": parseFloat(text()), "raw": JSON.stringify(text()) };
+		return {
+			"type": "Literal",
+			"value": parseInt(parseDecLiteral(text())),
+			"raw": "\"" + parseDecLiteral(text()) + "\""
+		};
 	}
 
 DecimalIntegerLiteral
@@ -433,7 +476,7 @@ ExponentPart
 	= ExponentIndicator SignedInteger
 
 ExponentIndicator
-	= "e"i
+	= "e"i / "very"i
 
 SignedInteger
 	= [+-]? DecimalDigit+
@@ -508,7 +551,8 @@ DSONArraySeperator
 	= "and" / "also"
 
 DSONValue
-	= StringLiteral
+	= Identifier
+	/ StringLiteral
 	/ NumericLiteral
 	/ DSONObject
 	/ DSONArray
@@ -596,11 +640,9 @@ LogicalOperator
 LeftHandSideExpression
 	= FunctionCallExpression / NewExpression
 
-
-
 /* Unary expressions */
 UnaryExpression
-	= op:UnaryPrefixOperator __ argument:Value
+	= op:UnaryOperator __ argument:Value
 	{
 		return {
 			"type": "UnaryExpression",
@@ -610,7 +652,7 @@ UnaryExpression
 		}
 	}
 
-UnaryPrefixOperator
+UnaryOperator
 	= "dogeof" /"notrly"
 	/ "typeof" / "!"
 
@@ -627,8 +669,8 @@ ComparisonExpression
 	}
 
 ComparisonOperator
-	= "not" / "smallerish" / "smaller" / "biggerish" / "bigger" / "is"
-	/ "!==" / ">=" / ">" / "<=" / "<" / "==="
+	= "not" / "smallerish" / "smaller" / "biggerish" / "bigger" / "is" / "shibeof"
+	/ "!==" / ">=" / ">" / "<=" / "<" / "===" / "instanceof"
 
 /* Function Call Expressions */
 FunctionCallExpression
