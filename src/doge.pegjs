@@ -18,12 +18,6 @@
 		"few": "/=",
 	};
 	
-	var idenMapping = {
-		"yes": "true",
-		"no": "false",
-		"empty": "null"
-	};
-	
 	var maybeOP = {
 		"type": "UnaryExpression",
 		"operator": "!",
@@ -130,7 +124,7 @@ WhiteSpace "whitespace"
 	/ [\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]
 
 /* Line Terminator */
-LineTerminator "end of line" = ("\n"/"\r"/"\u2028"/"\u2029")
+LineTerminator "end of line" = [\n\r\u2028\u2029]
 
 /* Line Terminator Sequence */
 LineTerminatorSequence "end of line sequence"
@@ -147,20 +141,16 @@ Comment "comment"
 
 /* Multi-line Comment */
 MultiLineComment
-	= "quiet" _u (!(_u "loud") SourceCharacter)* _u "loud"
+	= "quiet" (!"loud" SourceCharacter)* "loud"
 
 MultiLineCommentNoLineTerminator
-	= "quiet" _u (!((_u "loud") / LineTerminator) SourceCharacter)* _u "loud"
+	= "quiet" (!("loud" / LineTerminator) SourceCharacter)* "loud"
 
 /* Single-line Comment */
 SingleLineComment
 	= "shh" (!LineTerminator SourceCharacter)*
 
 /** Skipped */
-
-_u
-	= (WhiteSpace / LineTerminatorSequence)*
-
 __
 	= (WhiteSpace / LineTerminatorSequence / Comment)*
 
@@ -289,20 +279,37 @@ TrainedStatement
 
 /* ImportStatement */
 ImportStatement
-	= "so" __ str:StringLiteral as:(__ "as" __ Identifier)? EOS
+	= "so" __ str:(Identifier / StringLiteral) as:(__ "as" __ (Identifier / StringLiteral))? EOS
 	{
+		var _as = optionalList(extractOptional(as, 3));
+		var asName;
+		
+		if ('name' in _as) asName = _as['name'];
+		else if ('value' in _as) asName = _as['value'];
+		else if ('name' in str) asName = str['name'];
+		else if ('value' in str) asName = str['value'];
+		
 		return {
-			"type": "X-Require-Statement",
-			"name": moduleName(as != null ? as[3].name : str.value),
-			"argument": str.value
-		}
-	}
-	/ "so" __ str:Identifier as:(__ "as" __ Identifier)? EOS
-	{
-		return {
-			"type": "X-Require-Statement",
-			"name": moduleName(as != null ? as[3].name : str.name),
-			"argument": str.name
+			"type": "VariableDeclaration",
+			"declarations": [{
+				"type": "VariableDeclarator",
+				"id": {
+					"type": "Identifier",
+					"name": moduleName(asName)
+				},
+				"init": {
+					"type": "CallExpression",
+					"callee": {
+						"type": "Identifier",
+						"name": "require"
+					},
+					"arguments": [{
+						"type": "Literal",
+						"value": str['name'] || str['value']
+					}]
+				}
+			}],
+			"kind": "var"
 		}
 	}
 
@@ -338,6 +345,11 @@ BlockNoWow
 Value
 	= thisValue
 	/ Identifier
+	/ Literal
+
+Literal
+	= NullLiteral
+	/ BooleanLiteral
 	/ DSONLiteral
 	/ NumericLiteral
 	/ StringLiteral
@@ -357,13 +369,10 @@ Identifier
 
 IdentifierName "identifier"
 	= first:IdentifierStart rest:IdentifierPart*
-	{
-		var _t = first + rest.join("");
-		if (_t === "maybe") return maybeOP;
-		
+	{		
 		return {
 			"type": "Identifier",
-			"name": toId(_t)
+			"name": first + rest.join("")
 		};
 	}
 
@@ -376,10 +385,21 @@ IdentifierPart
 
 /* Reserved Words */
 ReservedWord
-	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "bark" / "always" / "notrly" / "dogeof"
-	/ "typeof"
+	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "bark" / "always" / "notrly" / "dogeof" / "maybe" / "yes" / "no" / "empty"
+	/ "typeof" / "true" / "false" / "null"
 
-/** Numeric Literals */
+/** Literals */
+/* Null Literals */
+NullLiteral
+	= ("null" / "empty") { return { type: "Literal", value: null }; }
+
+/* Boolean Literals */
+BooleanLiteral
+	= ("true" / "yes") { return { type: "Literal", value: true }; }
+	/ ("false" / "no") { return { type: "Literal", value: false }; }
+	/ "maybe" { return maybeOP; }
+
+/* Numeric Literals */
 NumericLiteral
 	= literal:DecimalLiteral !(IdentifierStart / DecimalDigit) {return literal;}
 
@@ -479,29 +499,32 @@ DSONArray
 	}
 
 DSONArrayElements
-	= first:DSONValue rest:(__ "and" __ DSONValue)*
+	= first:DSONValue rest:(__ DSONArraySeperator __ DSONValue)*
 	{
 		return buildList(first, rest, 3);
 	}
+
+DSONArraySeperator
+	= "and" / "also"
 
 DSONValue
 	= StringLiteral
 	/ NumericLiteral
 	/ DSONObject
 	/ DSONArray
-	/ "yes" {return {"type": "Identifier", "name": "true"}}
-	/ "no" {return {"type": "Identifier", "name": "false"}}
-	/ "empty" {return {"type": "Identifier", "name": "null"}}
+	/ "yes" {return {"type": "Identifier", "name": true}}
+	/ "no" {return {"type": "Identifier", "name": false}}
+	/ "empty" {return {"type": "Identifier", "name": null}}
 
 /** Array Literals */
 ArrayLiteral
 	= "[" __ "]"
 	{ return { "type": "ArrayExpression", "elements": [] }; }
-	/ "[" e:ArrayElements "]"
+	/ "[" __ e:ArrayElements __ "]"
 	{ return { "type": "ArrayExpression", "elements": e }; }
 
 ArrayElements
-	= first:ArrayElement rest:("," __ ArrayElement)* { return buildList(first, rest, 2); }
+	= first:ArrayElement rest:(__ "," __ ArrayElement)* { return buildList(first, rest, 3); }
 
 ArrayElement
 	= Expression
@@ -722,10 +745,10 @@ FunctionDeclaration
 		}
 	}
 
-FunctionArguments
-	= first:Expression rest:("," __ Expression)*
+FunctionArguments "arguments"
+	= first:Expression rest:(__ "," __ Expression)*
 	{
-		return buildList(first, rest, 2);
+		return buildList(first, rest, 3);
 	}
 
 /** 2.5 If Statements */
@@ -786,20 +809,3 @@ ForStatement
 	}
 
 ForNext = "next" / ';'
-
-/** 2.8 JS Statements, */
-JSStatement
-	= "@'" source:SourceCharacterNoQuote1* "'" EOS
-	{
-		return {
-			"type": "X-JS-Statement",
-			"source": source.join("")
-		}
-	}
-	/ '@"' source:SourceCharacterNoQuote2* '"' EOS
-	{
-		return {
-			"type": "X-JS-Statement",
-			"source": source.join("")
-		}
-	}

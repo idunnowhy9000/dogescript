@@ -165,13 +165,18 @@ An additional `as` expression may be written. This will translate to a variable 
 
 ```
 so "hello" as h                 shh imports the module "hello" as the variable h
+so "hello" as "h"               shh same as the above
 ```
 
 #### Exporting
 
 **Not (yet) present in this implementation**
 
-The `out` statement exports a module to `module.exports`
+The `out` statement exports a module to `module.exports`. The `out` statement starts with `out`, and then the identifier, literal, etc... to be exported.
+
+```
+out a                          shh sets "module.exports" to identifier "a"
+```
 
 ## "Built-in objects"
 
