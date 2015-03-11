@@ -79,6 +79,16 @@
 		return idenMapping[str] || str;
 	}
 	
+	function filledArray(count, value) {
+		var result = new Array(count), i;
+
+		for (i = 0; i < count; i++) {
+			result[i] = value;
+		}
+
+		return result;
+	}
+	
 	function moduleName(str) {
 		var mod = str, m = /^..?\/.*?([\w-]+)(\.\w+)?$/.exec(str);
 		if (m) {
@@ -416,8 +426,8 @@ IdentifierPart
 
 /* Reserved Words */
 ReservedWord
-	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "bark" / "always" / "notrly" / "dogeof" / "maybe" / "yes" / "no" / "empty"
-	/ "typeof" / "true" / "false" / "null"
+	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "bark" / "always" / "notrly" / "dogeof" / "maybe" / "yes" / $(!"notrly" "no") / "empty"
+	/ "typeof" / "true" / "false" / "null" / "void" / "delete"
 
 /** Literals */
 /* Null Literals */
@@ -427,7 +437,7 @@ NullLiteral
 /* Boolean Literals */
 BooleanLiteral
 	= ("true" / "yes") { return { type: "Literal", value: true }; }
-	/ ("false" / "no") { return { type: "Literal", value: false }; }
+	/ ("false" / $(!"notrly" "no")) { return { type: "Literal", value: false }; }
 	/ "maybe" { return maybeOP; }
 
 /* Numeric Literals */
@@ -562,17 +572,40 @@ DSONValue
 
 /** Array Literals */
 ArrayLiteral
-	= "[" __ "]"
-	{ return { "type": "ArrayExpression", "elements": [] }; }
-	/ "[" __ e:ArrayElements __ "]"
-	{ return { "type": "ArrayExpression", "elements": e }; }
+	= "[" __ elision:(Elision __)? "]" {
+		return {
+			type: "ArrayExpression",
+			elements: optionalList(extractOptional(elision, 0))
+		};
+	}
+	/ "[" __ elements:ElementList __ "]" {
+		return {
+			type: "ArrayExpression",
+			elements: elements
+		};
+	}
+	/ "[" __ elements:ElementList __ "," __ elision:(Elision __)? "]" {
+		return {
+			type: "ArrayExpression",
+			elements: elements.concat(optionalList(extractOptional(elision, 0)))
+		};
+	}
 
-ArrayElements
-	= first:ArrayElement rest:(__ "," __ ArrayElement)* { return buildList(first, rest, 3); }
+ElementList
+	= first:(
+		elision:(Elision __)? element:Expression {
+			return optionalList(extractOptional(elision, 0)).concat(element);
+		}
+	)
+	rest:(
+		__ "," __ elision:(Elision __)? element:Expression {
+			return optionalList(extractOptional(elision, 0)).concat(element);
+		}
+	)*
+	{ return Array.prototype.concat.apply(first, rest); }
 
-ArrayElement
-	= Expression
-	/ {return null;}
+Elision
+	= "," commas:(__ ",")* { return filledArray(commas.length + 1, null); }
 
 /** 2.3 Expression */
 /* Expressions */
@@ -619,7 +652,6 @@ AdditiveOperator
 
 Primary
 	= Value
-	/ UnaryExpression
 	/ "(" __ left:Expression __ ")" {return left;}
 
 /* Logical expressions */
@@ -638,11 +670,27 @@ LogicalOperator
 	= ("and" / "or" / "&&" / "||")
 
 LeftHandSideExpression
-	= FunctionCallExpression / NewExpression
+	= FunctionCallExpression / NewExpression / Value
 
 /* Unary expressions */
+PostfixExpression
+	= argument:LeftHandSideExpression _ operator:PostfixOperator
+	{
+		return {
+			"type": "UpdateExpression",
+			"operator": operator,
+			"argument": argument,
+			"prefix": false
+		}
+	}
+	/ LeftHandSideExpression
+
+PostfixOperator
+	= "++" / "--"
+
 UnaryExpression
-	= op:UnaryOperator __ argument:Value
+	= PostfixExpression
+	/ op:UnaryOperator __ argument:UnaryExpression
 	{
 		return {
 			"type": "UnaryExpression",
@@ -653,12 +701,12 @@ UnaryExpression
 	}
 
 UnaryOperator
-	= "dogeof" /"notrly"
-	/ "typeof" / "!"
+	= "dogeof" / "notrly"
+	/ "delete" / "void" / "typeof" / "!" / "~"
 
 /* Comparison */
 ComparisonExpression
-	= left:AdditiveExpression __ op:ComparisonOperator __ right:AdditiveExpression
+	= left:LeftHandSideExpression __ op:ComparisonOperator __ right:AdditiveExpression
 	{
 		return {
 			"type": "BinaryExpression",
