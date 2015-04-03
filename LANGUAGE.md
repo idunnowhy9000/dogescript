@@ -62,7 +62,7 @@ loud
 
 ### Variable Declaration and Assignment
 
-The syntax for declaration in dogescript is: `very`, followed by the variable's identifier, assignment operator (`=` or `is`), and an optional expression to initialize with.
+The syntax for declaration in dogescript is: `very`, followed by the variable's identifier, assignment operator (`=` or `as`), and an optional expression to initialize with.
 
 ```
 very doge is 100                      shh Initialized variable
@@ -74,7 +74,7 @@ shibe = 100                           shh also supported
 
 ### Blocks
 
-Blocks in dogescript are the same as blocks in Javascript, however, they can also be "indentation-based" like Python:
+Blocks in dogescript are the same as blocks in Python, in the way that they are "indentation-based":
 
 ```
 such block
@@ -92,13 +92,13 @@ All functions must have a `wow` statement. The syntax of it is `wow`, followed b
 
 ```
 such sum much arg1, arg2
-    shh Interior
+	shh Interior
 wow arg1 + arg2
 ```
 
 #### Calling
 
-Function calls starts with `plz`, the function's name, with optional arguments separated by a whitespace.
+Function calls starts with `plz`, the function's name, with optional arguments separated by a colon.
 
 ```
 plz sum with 1, 2
@@ -136,7 +136,40 @@ wow
 
 ### Loops
 
-To be added.
+#### While Loops
+
+While Loops starts with "many", an expression to test and a wow statement.
+
+```
+very i is 0
+many woof smallerish 3
+	shh Do something
+	i is i + 1
+wow
+```
+
+#### For Loops
+
+For Loops starts with much, a lexical declaration and 2 expressions followed by next, a block and an empty wow statement.
+
+```
+shh doge style
+much very i as 1 next i smaller 10 next i more 1
+	rly i bigger 2
+		shh Do something
+	wow
+wow
+```
+
+(is the same as this in Javascript)
+
+```
+for (var i = 1; i < 10; i += 1) {
+	if (i < 2) {
+		// Do something 
+	}
+}
+```
 
 ### Trained Statement
 
@@ -156,7 +189,7 @@ So statements starts with `so`, and the module to be imported. This will transla
 
 ```
 so "hello"                      shh imports the module "hello"
-so hello                        shh also imports the module "hello"
+so hello                        shh same
 ```
 
 An additional `as` expression may be written. This will translate to a variable with the `as`'s identifier being the identifier.

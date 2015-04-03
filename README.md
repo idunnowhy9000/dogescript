@@ -6,7 +6,7 @@
 
 This is an implementation of the best new compile-to-JS language, dogescript. Wow.
 
-Many things has been added in this implementation, such as, "native" DSON, new operators, and a rebuilt parser(!)
+Many things has been added in this implementation, such as, "native" DSON, new statements, expressions,..., and a rebuilt parser.
 
 This is not affiliated with the official [dogescript orginization](https://github.com/dogescript) in any way.
 

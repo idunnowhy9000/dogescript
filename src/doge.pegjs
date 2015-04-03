@@ -198,7 +198,8 @@ SourceElement
 	/ FunctionDeclaration
 	/ IfStatement
 	/ WhileStatement
-	/* ForStatement */
+	/ ForStatement
+	/ TryStatement
 
 /** 2.1 Statements */
 /* Statement */
@@ -230,7 +231,8 @@ DeclarationStatement
 			"kind": "var"
 		};
 	}
-	/ "always" __ iden:Identifier expr:(__ "is" __ Expression)? EOS
+	/* Constant declarations require rhs expression */
+	/ "always" __ iden:Identifier __ "is" __ Expression EOS
 	{
 		return {
 			"type": "VariableDeclaration",
@@ -247,17 +249,9 @@ DeclarationStatement
 
 /* AssignmentStatement */
 AssignmentStatement
-	= iden:MemberExpression __ ("as"/"=") __ expr:Expression EOS
+	= ass:AssignmentExpression EOS
 	{
-		return {
-			"type": "ExpressionStatement",
-			"expression": {
-				"type": "AssignmentExpression",
-				"operator": "=",
-				"left": iden,
-				"right": expr
-			}
-		}
+		return ass;
 	}
 
 /* Wow: ends block */
@@ -386,27 +380,27 @@ BarkStatement
 SourceElementNoWow = !WowStatement b:SourceElement {return b;}
 
 Block
-	= left:(INDENT SourceElementNoWow)*
+	= left:(INDENT SourceElementNoWow)* __
 	{
 		return {
 			"type": "BlockStatement",
 			"body": extractList(left, 1)
 		};
 	}
-	/ SourceElementNoWow
+	/ elem:SourceElementNoWow __ {return elem;}
 
 SourceElementWow
 	= SourceElement
 
 FunctionBlock
-	= left:(INDENT SourceElementWow)+
+	= left:(INDENT SourceElementWow)* __
 	{
 		return {
 			"type": "BlockStatement",
 			"body": extractList(left, 1)
 		};
 	}
-	/ SourceElementWow
+	/ elem:SourceElementWow __ {return elem;}
 
 /** 2.2 Values */
 Value
@@ -417,10 +411,11 @@ Value
 Literal
 	= NullLiteral
 	/ BooleanLiteral
-	/ DSONLiteral
 	/ NumericLiteral
 	/ StringLiteral
 	/ ArrayLiteral
+	/ ObjectLiteral
+	/ DSONLiteral
 
 thisValue
 	= "this"
@@ -452,8 +447,8 @@ IdentifierPart
 
 /* Reserved Words */
 ReservedWord
-	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "bark" / "always" / "notrly" / "dogeof" / "maybe" / "yes" / $(!"notrly" "no") / "empty"
-	/ "typeof" / "true" / "false" / "null" / "void" / "delete"
+	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "bark" / "always" / "notrly" / "dogeof" / "maybe" / "yes" / $(!"notrly" "no") / "empty" / "retrieve"
+	/ "typeof" / "true" / "false" / "null" / "void" / "delete" / "try" / "catch"
 
 /** Literals */
 /* Null Literals */
@@ -539,7 +534,7 @@ StringLiteral
 /* Object Literals */
 ObjectLiteral
 	= "{" __ "}" {return { "type": "ObjectExpression", "properties": [] };}
-	/ "{" __ obj:JSONMembers __ "}" {return obj;}
+	/ "{" __ obj:JSONMembers __ "}" {return { "type": "ObjectExpression", "properties": obj };}
 
 JSONMembers
 	= first:JSONPair rest:(__ "," __ JSONPair)*
@@ -548,7 +543,7 @@ JSONMembers
 	}
 
 JSONPair
-	= key:StringLiteral __ ":" __ value:Expression
+	= key:JSONPropertyName __ ":" __ value:Expression
 	{
 		return {
 			"key": key,
@@ -557,25 +552,21 @@ JSONPair
 		}
 	}
 
+JSONPropertyName
+	= IdentifierName
+	/ StringLiteral
+	/ NumericLiteral
+
 /** DSON Literals */
 DSONLiteral
 	= "{{" __ "}}" { return { "type": "ObjectExpression", "properties": [] }; }
-	/ "{{" __ obj:DSONObject __ "}}" {return obj;}
+	/ "{{" __ obj:DSONObject __ "}}" { return { "type": "ObjectExpression", "properties": obj }; }
 
 DSONObject
-	= "such" __ member:DSONMembers? __ "wow"
-	{
-		return {
-			"type": "ObjectExpression",
-			"properties": optionalList(member)
-		}
-	}
+	= "such" __ member:DSONMembers? __ "wow" { return optionalList(member); }
 
 DSONMembers
-	= first:DSONPair rest:(__ DSONMemberSeparator __ DSONPair)*
-	{
-		return buildList(first, rest, 3);
-	}
+	= first:DSONPair rest:(__ DSONMemberSeparator __ DSONPair)* { return buildList(first, rest, 3); }
 
 DSONMemberSeparator
 	= "," / "." / "!" / "?"
@@ -792,7 +783,7 @@ NewExpression
 
 /* AssignmentExpression */
 AssignmentExpression
-	= left:LeftHandSideExpression _ op:AssignmentOperator __ right:Expression
+	= left:LeftHandSideExpression __ op:AssignmentOperator __ right:Expression
 	{
 		return {
 			"type": "AssignmentExpression",
@@ -842,14 +833,17 @@ MemberExpression
 
 /** 2.4 Function declarations */
 FunctionDeclaration
-	= "such" __ iden:Identifier args:(__ "much" __ FunctionArguments)? NEWLINE block:FunctionBlock wow:WowStatement
-	{		
+	= "such" __ iden:Identifier args:(__ "much" __ FormalParameterList)? NEWLINE block:FunctionBlock wow:WowStatement
+	{
+		var newb = block;
+		block.body.push(wow);
+		
 		return {
 			"type": "FunctionDeclaration",
 			"id": iden,
 			"params": args ? args[3] : [],
 			"default": [],
-			"body": block,
+			"body": newb,
 			
 			"rest": null,
 			"generator": false,
@@ -863,6 +857,12 @@ FunctionArguments "arguments"
 		return buildList(first, rest, 3);
 	}
 
+FormalParameterList
+	= first:Identifier rest:(__ "," __ Identifier)*
+	{
+		return buildList(first, rest, 3);
+	}
+
 /** 2.5 If Statements */
 IfStatement
 	= "rly" __ test:Expression NEWLINE block:Block _else:(EmptyWowStatement / ElseStatement)
@@ -872,7 +872,7 @@ IfStatement
 			"test": test,
 			"consequent": block,
 			"alternate": _else // else clause hack
-		}
+		};
 	}
 
 /** 2.5.1 Else Statements */
@@ -888,25 +888,71 @@ WhileStatement
 			"type": "WhileStatement",
 			"test": test,
 			"body": block
-		}
+		};
 	}
 
-/** 2.7 For Statements (BETA) (DO NOT USE) */
+/** 2.7 For Statements */
 ForStatement
 	= "much" __
-	init:(Expression __)? ForNext __
+	init:("very" __ AssignmentExpression __)? ForNext __
 	test:(Expression __)? ForNext __
-	update:(Expression __)? EOS
-	body:(Block EOS)?
-	WowStatement
+	update:Expression? NEWLINE
+	body:Block
+	EmptyWowStatement
 	{
 		return {
 			"type": "ForStatement",
 			"init": extractOptional(init, 0),
 			"test": extractOptional(test, 0),
-			"update": extractOptional(update, 0),
-			"body": extractOptional(body, 0)
-		}
+			"update": update,
+			"body": body
+		};
 	}
 
 ForNext = "next" / ';'
+
+/** 2.8 Try-Catch-Finally Statements */
+TryStatement
+	= "try" NEWLINE block:Block handler:Catch finalizer:Finally
+	{
+		return {
+			"type": "TryStatement",
+			"block": block,
+			"handler": handler,
+			"finalizer": finalizer
+		};
+	}
+	/ "try" NEWLINE block:Block handler:Catch
+	{
+		return {
+			"type": "TryStatement",
+			"block": block,
+			"handler": handler,
+			"finalizer": null
+		};
+	}
+	/ "try" NEWLINE block:Block finalizer:Finally
+	{
+		return {
+			"type": "TryStatement",
+			"block": block,
+			"handler": null,
+			"finalizer": finalizer
+		};
+	}
+
+Catch
+	= "catch" __ param:Identifier NEWLINE body:Block
+	{
+		return {
+			"type": "CatchClause",
+			"param": param,
+			"body": body
+		};
+	}
+
+Finally
+	= "retrieve" NEWLINE body:Block
+	{
+		return body;
+	}
