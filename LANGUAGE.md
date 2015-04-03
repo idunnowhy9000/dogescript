@@ -60,18 +60,6 @@ quiet
 loud
 ```
 
-### Embedded Javascript
-
-**Not present in this implementation**
-
-Javascript **statements** may be embedded directly into dogescript. To embed Javascript, start with `@"` or `@'`, the Javascript code and end with `"` or `'` like strings.
-
-Embedded Javascript is a method to fill in the holes that dogescript doesn't fill (think of it like "polyfilling" languages).
-
-```
-@"console.log('this is embedded javascript');"
-```
-
 ### Variable Declaration and Assignment
 
 The syntax for declaration in dogescript is: `very`, followed by the variable's identifier, assignment operator (`=` or `is`), and an optional expression to initialize with.
@@ -82,6 +70,16 @@ very shibe                            shh Uninitialized variable
 
 shibe as 100                          shh Attribution
 shibe = 100                           shh also supported
+```
+
+### Blocks
+
+Blocks in dogescript are the same as blocks in Javascript, however, they can also be "indentation-based" like Python:
+
+```
+such block
+	a = 1 + 1
+wow
 ```
 
 ### Functions

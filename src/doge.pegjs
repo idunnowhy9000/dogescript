@@ -164,6 +164,11 @@ MultiLineCommentNoLineTerminator
 SingleLineComment
 	= "shh" (!LineTerminator SourceCharacter)*
 
+/* Indents */
+INDENT = "    " / "\t"
+
+NEWLINE = [\n\r]
+
 /** Skipped */
 __
 	= (WhiteSpace / LineTerminatorSequence / Comment)*
@@ -194,9 +199,6 @@ SourceElement
 	/ IfStatement
 	/ WhileStatement
 	/* ForStatement */
-
-/* Source Element without Wow Statement */
-SourceElementNoWow = !WowStatement b:SourceElement {return b;}
 
 /** 2.1 Statements */
 /* Statement */
@@ -268,6 +270,8 @@ WowStatement
 		}
 	}
 
+EmptyWowStatement = "wow" EOS {return null;}
+
 /* ExpressionStatement */
 ExpressionStatement
 	= expr:Expression EOS
@@ -306,24 +310,28 @@ ImportStatement
 		
 		return {
 			"type": "VariableDeclaration",
-			"declarations": [{
-				"type": "VariableDeclarator",
-				"id": {
-					"type": "Identifier",
-					"name": moduleName(asName)
-				},
-				"init": {
-					"type": "CallExpression",
-					"callee": {
+			"declarations": [
+				{
+					"type": "VariableDeclarator",
+					"id": {
 						"type": "Identifier",
-						"name": "require"
+						"name": moduleName(asName)
 					},
-					"arguments": [{
-						"type": "Literal",
-						"value": str['name'] || str['value']
-					}]
+					"init": {
+						"type": "CallExpression",
+						"callee": {
+							"type": "Identifier",
+							"name": "require"
+						},
+						"arguments": [
+							{
+								"type": "Literal",
+								"value": str['name'] || str['value']
+							}
+						]
+					}
 				}
-			}],
+			],
 			"kind": "var"
 		}
 	}
@@ -373,14 +381,32 @@ BarkStatement
 	}
 
 /** 2.1.1 Blocks */
-BlockNoWow
-	= first:SourceElementNoWow rest:(__ SourceElementNoWow)*
-	{		
+
+/* Source Element without Wow Statement */
+SourceElementNoWow = !WowStatement b:SourceElement {return b;}
+
+Block
+	= left:(INDENT SourceElementNoWow)*
+	{
 		return {
 			"type": "BlockStatement",
-			"body": buildList(first, rest, 1)
-		}
+			"body": extractList(left, 1)
+		};
 	}
+	/ SourceElementNoWow
+
+SourceElementWow
+	= SourceElement
+
+FunctionBlock
+	= left:(INDENT SourceElementWow)+
+	{
+		return {
+			"type": "BlockStatement",
+			"body": extractList(left, 1)
+		};
+	}
+	/ SourceElementWow
 
 /** 2.2 Values */
 Value
@@ -481,7 +507,7 @@ DecimalDigit
 NonZeroDigit
 	= [1-9]
 
-/** ExponentPart */
+/* ExponentPart */
 ExponentPart
 	= ExponentIndicator SignedInteger
 
@@ -510,9 +536,31 @@ StringLiteral
 		};
 	}
 
+/* Object Literals */
+ObjectLiteral
+	= "{" __ "}" {return { "type": "ObjectExpression", "properties": [] };}
+	/ "{" __ obj:JSONMembers __ "}" {return obj;}
+
+JSONMembers
+	= first:JSONPair rest:(__ "," __ JSONPair)*
+	{
+		return buildList(first, rest, 3);
+	}
+
+JSONPair
+	= key:StringLiteral __ ":" __ value:Expression
+	{
+		return {
+			"key": key,
+			"value": value,
+			"kind": "init"
+		}
+	}
+
 /** DSON Literals */
 DSONLiteral
-	= "{{" __ obj:DSONObject __ "}}" {return obj}
+	= "{{" __ "}}" { return { "type": "ObjectExpression", "properties": [] }; }
+	/ "{{" __ obj:DSONObject __ "}}" {return obj;}
 
 DSONObject
 	= "such" __ member:DSONMembers? __ "wow"
@@ -794,40 +842,14 @@ MemberExpression
 
 /** 2.4 Function declarations */
 FunctionDeclaration
-	= "such" __ iden:Identifier EOS __ block:BlockNoWow? __ wow:WowStatement
-	{
-		fnBlock = block || {
-			"type": "BlockStatement",
-			"body": []
-		};
-		fnBlock.body.push(wow);
-		
+	= "such" __ iden:Identifier args:(__ "much" __ FunctionArguments)? NEWLINE block:FunctionBlock wow:WowStatement
+	{		
 		return {
 			"type": "FunctionDeclaration",
 			"id": iden,
-			"params": [],
+			"params": args ? args[3] : [],
 			"default": [],
-			"body": fnBlock,
-			
-			"rest": null,
-			"generator": false,
-			"expression": false
-		}
-	}
-	/ "such" __ iden:Identifier __ "much" __ args:FunctionArguments EOS __ block:BlockNoWow? __ wow:WowStatement
-	{
-		fnBlock = block || {
-			"type": "BlockStatement",
-			"body": []
-		};
-		fnBlock.body.push(wow);
-		
-		return {
-			"type": "FunctionDeclaration",
-			"id": iden,
-			"params": args,
-			"default": [],
-			"body": fnBlock,
+			"body": block,
 			
 			"rest": null,
 			"generator": false,
@@ -843,35 +865,24 @@ FunctionArguments "arguments"
 
 /** 2.5 If Statements */
 IfStatement
-	= "rly" __ test:Expression EOS __ block:BlockNoWow? __ IfWowStatement
+	= "rly" __ test:Expression NEWLINE block:Block _else:(EmptyWowStatement / ElseStatement)
 	{
 		return {
 			"type": "IfStatement",
 			"test": test,
 			"consequent": block,
-			"alternate": null
+			"alternate": _else // else clause hack
 		}
 	}
-	/ "rly" __ test:Expression EOS __ block:BlockNoWow? __ alt:ElseStatement
-	{
-		return {
-			"type": "IfStatement",
-			"test": test,
-			"consequent": block,
-			"alternate": alt
-		}
-	}
-
-IfWowStatement = "wow" EOS
 
 /** 2.5.1 Else Statements */
 ElseStatement
 	= "but" __ block:IfStatement {return block;}
-	/ "but" __ block:BlockNoWow? __ IfWowStatement {return block;}
+	/ "but" NEWLINE block:Block EmptyWowStatement {return block;}
 
 /** 2.6 While Statements */
 WhileStatement
-	= "many" __ test:Expression EOS block:BlockNoWow? __ WowStatement
+	= "many" __ test:Expression NEWLINE block:Block EmptyWowStatement
 	{
 		return {
 			"type": "WhileStatement",
@@ -886,7 +897,7 @@ ForStatement
 	init:(Expression __)? ForNext __
 	test:(Expression __)? ForNext __
 	update:(Expression __)? EOS
-	body:(BlockNoWow EOS)?
+	body:(Block EOS)?
 	WowStatement
 	{
 		return {
