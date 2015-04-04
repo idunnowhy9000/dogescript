@@ -101,6 +101,36 @@
 	function parseDecLiteral(str) {
 		return str.replace(/(very|VERY)/, "e");
 	}
+	
+	function buildTree(first, rest, builder) {
+		var result = first, i;
+		for (i = 0; i < rest.length; i++) {
+			result = builder(result, rest[i]);
+		}
+		return result;
+	}
+	
+	function buildBinaryExpression(first, rest) {
+		return buildTree(first, rest, function(result, element) {
+			return {
+				type: "BinaryExpression",
+				operator: toOP(element[1]),
+				left: result,
+				right: element[3]
+			};
+		});
+	}
+	
+	function buildLogicalExpression(first, rest) {
+		return buildTree(first, rest, function(result, element) {
+			return {
+				type: "LogicalExpression",
+				operator: toOP(element[1]),
+				left: result,
+				right: element[3]
+			};
+		});
+	}
 }
 
 start = __ program:Program __ {return program;}
@@ -213,7 +243,6 @@ Statement
 	/ ExportStatement
 	/ DeboogerStatement
 	/ BarkStatement
-	/* JSStatement */
 
 /* Variable declarations */
 DeclarationStatement
@@ -649,67 +678,44 @@ Elision
 /** 2.3 Expression */
 /* Expressions */
 Expression
-	= FunctionCallExpression
-	/ NewExpression
-	/ AssignmentExpression
-	/ LogicalExpression
-	/ ComparisonExpression
-	/ AdditiveExpression
-	/ UnaryExpression
-	/ Value
-
-/* "Algebra" expressions */
-MultiplicativeExpression
-	= left:Primary __ op:MultiplicativeOperator __ right:MultiplicativeExpression
-	{
-		return {
-			"type": "BinaryExpression",
-			"operator": toOP(op),
-			"left": left,
-			"right": right
-		}
-	}
-	/ Primary
-
-MultiplicativeOperator
-	= "*" / "/" / "%"
-
-AdditiveExpression
-	= left:MultiplicativeExpression __ op:AdditiveOperator __ right:AdditiveExpression
-	{
-		return {
-			"type": "BinaryExpression",
-			"operator": toOP(op),
-			"left": left,
-			"right": right
-		}
-	}
-	/ MultiplicativeExpression
-
-AdditiveOperator
-	= "+" / "-"
+	= AssignmentExpression
 
 Primary
 	= Value
 	/ "(" __ left:Expression __ ")" {return left;}
 
-/* Logical expressions */
-LogicalExpression
-	= left:AdditiveExpression __ op:LogicalOperator __ right:AdditiveExpression
-	{
-		return {
-			"type": "LogicalExpression",
-			"operator": toOP(op),
-			"left": left,
-			"right": right
-		}
-	}
+/* "Algebra" expressions */
+AdditiveExpression
+	= first:MultiplicativeExpression rest:(__ AdditiveOperator __ MultiplicativeExpression)*
+	{ return buildBinaryExpression(first, rest); }
 
-LogicalOperator
-	= ("and" / "or" / "&&" / "||")
+AdditiveOperator
+	= "+" / "-"
+
+MultiplicativeExpression
+	= first:UnaryExpression rest:(__ MultiplicativeOperator __ UnaryExpression)*
+	{ return buildBinaryExpression(first, rest); }
+
+MultiplicativeOperator
+	= "*" / "/" / "%"
+
+/* Logical expressions */
+LogicalORExpression
+	= first:LogicalANDExpression rest:(__ LogicalOROperator __ LogicalANDExpression)*
+	{ return buildBinaryExpression(first, rest); }
+
+LogicalOROperator
+	= "or" / "||"
+
+LogicalANDExpression
+	= first:ComparisonExpression rest:(__ LogicalANDOperator __ ComparisonExpression)*
+	{ return buildBinaryExpression(first, rest); }
+
+LogicalANDOperator
+	= "and" / "&&"
 
 LeftHandSideExpression
-	= FunctionCallExpression / NewExpression / Value
+	= FunctionCallExpression / NewExpression / Primary
 
 /* Unary expressions */
 PostfixExpression
@@ -720,7 +726,7 @@ PostfixExpression
 			"operator": operator,
 			"argument": argument,
 			"prefix": false
-		}
+		};
 	}
 	/ LeftHandSideExpression
 
@@ -736,28 +742,30 @@ UnaryExpression
 			"operator": toOP(op),
 			"argument": argument,
 			"prefix": true
-		}
+		};
 	}
 
 UnaryOperator
 	= "dogeof" / "notrly"
-	/ "delete" / "void" / "typeof" / "!" / "~"
+	/ "delete" / "void" / "typeof" / "!" / "~" / "++" / "--"
 
 /* Comparison */
 ComparisonExpression
-	= left:LeftHandSideExpression __ op:ComparisonOperator __ right:AdditiveExpression
-	{
-		return {
-			"type": "BinaryExpression",
-			"operator": toOP(op),
-			"left": left,
-			"right": right
-		}
-	}
+	= first:RelationalExpression rest:(__ ComparisonOperator __ RelationalExpression)*
+	{ return buildBinaryExpression(first, rest); }
 
 ComparisonOperator
-	= "not" / "smallerish" / "smaller" / "biggerish" / "bigger" / "is" / "shibeof"
-	/ "!==" / ">=" / ">" / "<=" / "<" / "===" / "instanceof"
+	= "not" / "is"
+	/ "!==" / "===" / "==" / "!="
+
+/* Relationals */
+RelationalExpression
+	= first:AdditiveExpression rest:(__ RelationalOperator __ AdditiveExpression)*
+	{ return buildBinaryExpression(first, rest); }
+	
+RelationalOperator
+	= "smallerish" / "smaller" / "biggerish" / "bigger" / "shibeof"
+	/ "<=" / "<" / ">=" / ">" / "instanceof"
 
 /* Function Call Expressions */
 FunctionCallExpression
@@ -783,7 +791,16 @@ NewExpression
 
 /* AssignmentExpression */
 AssignmentExpression
-	= left:LeftHandSideExpression __ op:AssignmentOperator __ right:Expression
+	= left:LeftHandSideExpression __ (("=" !"=") / "as") __ right:Expression
+	{
+		return {
+			"type": "AssignmentExpression",
+			"operator": "=",
+			"left": left,
+			"right": right
+		};
+	}
+	/ left:LeftHandSideExpression __ op:AssignmentOperator __ right:AssignmentExpression
 	{
 		return {
 			"type": "AssignmentExpression",
@@ -792,6 +809,7 @@ AssignmentExpression
 			"right": right
 		};
 	}
+	/ LogicalORExpression
 
 AssignmentOperator
 	= "as" / "more" / "less" / "lots" / "few"
