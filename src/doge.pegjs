@@ -404,32 +404,15 @@ BarkStatement
 	}
 
 /** 2.1.1 Blocks */
-
-/* Source Element without Wow Statement */
-SourceElementNoWow = !WowStatement b:SourceElement {return b;}
-
 Block
-	= left:(INDENT SourceElementNoWow)* __
+	= left:(INDENT SourceElement)* __
 	{
 		return {
 			"type": "BlockStatement",
 			"body": extractList(left, 1)
 		};
 	}
-	/ elem:SourceElementNoWow __ {return elem;}
-
-SourceElementWow
-	= SourceElement
-
-FunctionBlock
-	= left:(INDENT SourceElementWow)* __
-	{
-		return {
-			"type": "BlockStatement",
-			"body": extractList(left, 1)
-		};
-	}
-	/ elem:SourceElementWow __ {return elem;}
+	/ left:SourceElement {return left;}
 
 /** 2.2 Values */
 Value
@@ -851,7 +834,7 @@ MemberExpression
 
 /** 2.4 Function declarations */
 FunctionDeclaration
-	= "such" __ iden:Identifier args:(__ "much" __ FormalParameterList)? NEWLINE block:FunctionBlock wow:WowStatement
+	= "such" __ iden:Identifier args:(__ "much" __ FormalParameterList)? NEWLINE block:Block wow:WowStatement
 	{
 		var newb = block;
 		block.body.push(wow);
@@ -860,7 +843,6 @@ FunctionDeclaration
 			"type": "FunctionDeclaration",
 			"id": iden,
 			"params": args ? args[3] : [],
-			"default": [],
 			"body": newb,
 			
 			"rest": null,
@@ -883,7 +865,7 @@ FormalParameterList
 
 /** 2.5 If Statements */
 IfStatement
-	= "rly" __ test:Expression NEWLINE block:Block _else:(EmptyWowStatement / ElseStatement)
+	= "rly" __ test:Expression __ ":" NEWLINE block:Block _else:(EmptyWowStatement / ElseStatement)
 	{
 		return {
 			"type": "IfStatement",

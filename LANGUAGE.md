@@ -1,4 +1,4 @@
-# dogescript spec (2.4.0)
+# dogescript spec (3.0.0)
 
 **dogescript** is a programming language made by [remixz](https://github.com/remixz) when he gone insane. **dogescript** is preferably named **dogescript** without uppercase letters.
 
@@ -12,6 +12,7 @@ dogescript files ends with the extension `.djs`. Should dogescript be ported to 
 
 * dogescript uses single or double quotes for strings
 * dogescript seperates statements by newlines or semicolons by default.
+* dogescript blocks are like Javascript blocks (see [below](https://github.com/idunnowhy9000/dogescript/blob/master/LANGUAGE.md#blocks))
 
 ## dogescript syntax
 
