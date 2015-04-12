@@ -120,6 +120,17 @@
 			};
 		});
 	}
+	
+	function buildLogicalExpression(first, rest) {
+		return buildTree(first, rest, function(result, element) {
+			return {
+				type: "LogicalExpression",
+				operator: toOP(element[1]),
+				left: result,
+				right: element[3]
+			};
+		});
+	}
 }
 
 start = __ program:Program __ {return program;}
@@ -220,15 +231,16 @@ SourceElement
 /** 2.1 Statements */
 /* Statement */
 Statement
-	= DeclarationStatement
+	= ExpressionStatement
+	/ DeclarationStatement
 	/ AssignmentStatement
 	/ WowStatement
-	/ ExpressionStatement
 	/ TrainedStatement
 	/ ImportStatement
 	/ ExportStatement
 	/ DeboogerStatement
 	/ BarkStatement
+	/ ThrowStatement
 
 /* Variable declarations */
 DeclarationStatement
@@ -247,7 +259,7 @@ DeclarationStatement
 		};
 	}
 	/* Constant declarations require rhs expression */
-	/ "always" __ iden:Identifier __ "is" __ Expression EOS
+	/ "always" __ iden:Identifier expr:(__ "is" __ Expression)? EOS
 	{
 		return {
 			"type": "VariableDeclaration",
@@ -299,8 +311,7 @@ TrainedStatement
 			"type": "ExpressionStatement",
 			"expression": {
 				"type": "Literal",
-				"value": "use strict",
-				"raw": "\"use strict\""
+				"value": "use strict"
 			}
 		}
 	}
@@ -395,7 +406,7 @@ Block
 	{
 		return {
 			"type": "BlockStatement",
-			"body": left
+			"body": optionalList(left)
 		};
 	}
 
@@ -445,7 +456,7 @@ IdentifierPart
 /* Reserved Words */
 ReservedWord
 	= "such" / "wow" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "bark" / "always" / "notrly" / "dogeof" / "maybe" / "yes" / $(!"notrly" "no") / "empty" / "retrieve"
-	/ "typeof" / "true" / "false" / "null" / "void" / "delete" / "try" / "catch"
+	/ "typeof" / "true" / "false" / "null" / "void" / "delete" / "try" / "catch" / "new"
 
 /** Literals */
 /* Null Literals */
@@ -468,24 +479,21 @@ DecimalLiteral
 	{
 		return {
 			"type": "Literal",
-			"value": parseFloat(parseDecLiteral(text())),
-			"raw": "\"" + parseDecLiteral(text()) + "\""
+			"value": parseFloat(parseDecLiteral(text()))
 		};
 	}
 	/ "." DecimalDigit+ ExponentPart?
 	{
 		return {
 			"type": "Literal",
-			"value": parseFloat(parseDecLiteral(text())),
-			"raw": "\"" + parseDecLiteral(text()) + "\""
+			"value": parseFloat(parseDecLiteral(text()))
 		};
 	}
 	/ DecimalIntegerLiteral+ ExponentPart?
 	{
 		return {
 			"type": "Literal",
-			"value": parseInt(parseDecLiteral(text())),
-			"raw": "\"" + parseDecLiteral(text()) + "\""
+			"value": parseInt(parseDecLiteral(text()))
 		};
 	}
 
@@ -515,16 +523,14 @@ StringLiteral
 	{
 		return {
 			"type": "Literal",
-			"value": literal.join(""),
-			"raw": text()
+			"value": literal.join("")
 		};
 	}
 	/ '"' literal:SourceCharacterNoQuote2* '"'
 	{
 		return {
 			"type": "Literal",
-			"value": literal.join(""),
-			"raw": text()
+			"value": literal.join("")
 		};
 	}
 
@@ -670,14 +676,14 @@ MultiplicativeOperator
 /* Logical expressions */
 LogicalORExpression
 	= first:LogicalANDExpression rest:(__ LogicalOROperator __ LogicalANDExpression)*
-	{ return buildBinaryExpression(first, rest); }
+	{ return buildLogicalExpression(first, rest); }
 
 LogicalOROperator
 	= "or" / "||"
 
 LogicalANDExpression
 	= first:ComparisonExpression rest:(__ LogicalANDOperator __ ComparisonExpression)*
-	{ return buildBinaryExpression(first, rest); }
+	{ return buildLogicalExpression(first, rest); }
 
 LogicalANDOperator
 	= "and" / "&&"
@@ -715,7 +721,7 @@ UnaryExpression
 
 UnaryOperator
 	= "dogeof" / "notrly"
-	/ "delete" / "void" / "typeof" / "!" / "~" / "++" / "--"
+	/ "delete" / "void" / "typeof" / "!" / "~" / "++" / "--" / "+" / "-"
 
 /* Comparison */
 ComparisonExpression
@@ -788,7 +794,7 @@ MemberExpression
 	= first:(
 		Primary
 		/ FunctionExpression
-		/ "new" __ callee:MemberExpression (__ "with" __ FunctionArguments)?
+		/ "new" __ iden:MemberExpression args:(__ "with" __ FunctionArguments)?
 		{
 			return {
 				"type": "NewExpression",
@@ -949,4 +955,14 @@ Finally
 	= "retrieve" NEWLINE body:Block
 	{
 		return body;
+	}
+
+/** 2.9 Throw Statement */
+ThrowStatement
+	= "throw" __ left:Expression EOS
+	{
+		return {
+			"type": "ThrowStatement",
+			"argument": left
+		};
 	}

@@ -23,7 +23,7 @@
   "bin": "./bin/dogescript.js",
   "scripts": {
     "clean": "node ./test/clean.js",
-    "test": "node ./test/spec.js",
+    "test": "mocha",
     "prepublish": "node build.js",
     "min": "uglifyjs dist/dogescript.js > dist/dogescript.min.js",
     "dist": "npm run build && npm run min"
