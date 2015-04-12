@@ -19,7 +19,8 @@ such woof much foo, bar, bat
         plz console.loge with ['so', 'wow']
     wow
     plz nested
-wow bar
+	wow bar
+wow
 
 plz woof with 'multiple', 'doge', 'properties wow'
 

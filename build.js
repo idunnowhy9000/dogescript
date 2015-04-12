@@ -1,3 +1,4 @@
+// Real programmers use vanilla js(tm)
 var pegjs = require("pegjs"),
 	fs = require("fs"),
 	path = require("path");

@@ -231,9 +231,9 @@ SourceElement
 /** 2.1 Statements */
 /* Statement */
 Statement
-	= ExpressionStatement
+	= AssignmentStatement
 	/ DeclarationStatement
-	/ AssignmentStatement
+	/ ExpressionStatement
 	/ WowStatement
 	/ TrainedStatement
 	/ ImportStatement
@@ -276,9 +276,14 @@ DeclarationStatement
 
 /* AssignmentStatement */
 AssignmentStatement
-	= ass:AssignmentExpression EOS
+	=  left:LeftHandSideExpression __ ("=" / "is") __ right:Expression EOS
 	{
-		return ass;
+		return {
+			"type": "AssignmentExpression",
+			"operator": "=",
+			"left": left,
+			"right": right
+		};
 	}
 
 /* Wow: ends block */
