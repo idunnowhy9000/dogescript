@@ -120,17 +120,6 @@
 			};
 		});
 	}
-	
-	function buildLogicalExpression(first, rest) {
-		return buildTree(first, rest, function(result, element) {
-			return {
-				type: "LogicalExpression",
-				operator: toOP(element[1]),
-				left: result,
-				right: element[3]
-			};
-		});
-	}
 }
 
 start = __ program:Program __ {return program;}
@@ -193,9 +182,6 @@ MultiLineCommentNoLineTerminator
 /* Single-line Comment */
 SingleLineComment
 	= "shh" (!LineTerminator SourceCharacter)*
-
-/* Indents */
-INDENT = "    " / "\t"
 
 NEWLINE = [\n\r]
 
@@ -285,7 +271,7 @@ AssignmentStatement
 
 /* Wow: ends block */
 WowStatement
-	= ("wow"/"wow&") _ v:Expression? EOS
+	= "wow" _ v:Expression EOS
 	{
 		return {
 			"type": "ReturnStatement",
@@ -293,7 +279,7 @@ WowStatement
 		}
 	}
 
-EmptyWowStatement = "wow" EOS {return null;}
+EmptyWowStatement = "wow" EOS
 
 /* ExpressionStatement */
 ExpressionStatement
@@ -405,14 +391,13 @@ BarkStatement
 
 /** 2.1.1 Blocks */
 Block
-	= left:(INDENT SourceElement)* __
+	= __ left:SourceElements? __
 	{
 		return {
 			"type": "BlockStatement",
-			"body": extractList(left, 1)
+			"body": left
 		};
 	}
-	/ left:SourceElement {return left;}
 
 /** 2.2 Values */
 Value
@@ -459,7 +444,7 @@ IdentifierPart
 
 /* Reserved Words */
 ReservedWord
-	= "such" / "wow" / "wow&" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "bark" / "always" / "notrly" / "dogeof" / "maybe" / "yes" / $(!"notrly" "no") / "empty" / "retrieve"
+	= "such" / "wow" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "bark" / "always" / "notrly" / "dogeof" / "maybe" / "yes" / $(!"notrly" "no") / "empty" / "retrieve"
 	/ "typeof" / "true" / "false" / "null" / "void" / "delete" / "try" / "catch"
 
 /** Literals */
@@ -584,7 +569,7 @@ DSONMemberSeparator
 	= "," / "." / "!" / "?"
 
 DSONPair
-	= key:StringLiteral __ "is" __ value:DSONValue
+	= key:JSONPropertyName __ "is" __ value:DSONValue
 	{
 		return {
 			"key": key,
@@ -698,7 +683,7 @@ LogicalANDOperator
 	= "and" / "&&"
 
 LeftHandSideExpression
-	= FunctionCallExpression / NewExpression / Primary
+	= FunctionCallExpression / NewExpression
 
 /* Unary expressions */
 PostfixExpression
@@ -763,7 +748,8 @@ FunctionCallExpression
 	
 /* New Expressions */
 NewExpression
-	= "new" __ iden:MemberExpression args:(__ "with" __ FunctionArguments)?
+	= MemberExpression
+	/ "new" __ iden:MemberExpression args:(__ "with" __ FunctionArguments)?
 	{
 		return {
 			"type": "NewExpression",
@@ -801,7 +787,7 @@ AssignmentOperator
 MemberExpression
 	= first:(
 		Primary
-		/ FunctionCallExpression
+		/ FunctionExpression
 		/ "new" __ callee:MemberExpression (__ "with" __ FunctionArguments)?
 		{
 			return {
@@ -834,21 +820,29 @@ MemberExpression
 
 /** 2.4 Function declarations */
 FunctionDeclaration
-	= "such" __ iden:Identifier args:(__ "much" __ FormalParameterList)? NEWLINE block:Block wow:WowStatement
+	= "such" __ iden:Identifier args:(__ "much" __ FormalParameterList)? NEWLINE block:Block EmptyWowStatement
 	{
-		var newb = block;
-		block.body.push(wow);
-		
 		return {
 			"type": "FunctionDeclaration",
 			"id": iden,
 			"params": args ? args[3] : [],
-			"body": newb,
+			"body": block,
 			
 			"rest": null,
 			"generator": false,
 			"expression": false
 		}
+	}
+
+FunctionExpression	
+	= "much" __ args:(FormalParameterList)? NEWLINE body:Block EmptyWowStatement
+	{
+		return {
+			"type": "FunctionExpression",
+			"id": null,
+			"params": optionalList(args),
+			"body": body
+		};
 	}
 
 FunctionArguments "arguments"

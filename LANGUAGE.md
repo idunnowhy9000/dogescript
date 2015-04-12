@@ -75,7 +75,7 @@ shibe = 100                           shh also supported
 
 ### Blocks
 
-Blocks in dogescript are the same as blocks in Python, in the way that they are "indentation-based":
+Blocks in dogescript are the same as blocks in Javascript, however ends with `wow`:
 
 ```
 such block
@@ -201,8 +201,6 @@ so "hello" as "h"               shh same as the above
 ```
 
 #### Exporting
-
-**Not (yet) present in this implementation**
 
 The `out` statement exports a module to `module.exports`. The `out` statement starts with `out`, and then the identifier, literal, etc... to be exported.
 

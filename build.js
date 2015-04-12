@@ -3,13 +3,29 @@ var pegjs = require("pegjs"),
 	path = require("path");
 
 var OPTIONS = {
-	"PEG_FILE": "./src/doge.pegjs",
-	"PEG_OUT": "./lib/parser.js"
+	// dogescript
+	"PEG_IN": "./src/dogescript/doge.pegjs",
+	"PEG_OUT": "./lib/parser.js",
+	
+	// dson
+	"DSON_PEG": "./src/dson/dson.pegjs",
+	"DSON_START": "./src/dson/dson-start.js",
+	"DSON_END": "./src/dson/dson-end.js",
+	"DSON_OUT": "./lib/dson.js"
 }
 
-var pegfile = pegjs.buildParser(fs.readFileSync(path.join(__dirname,OPTIONS.PEG_FILE), "utf8"), {
-	"output": "source"
-});
+function read(file) {
+	return fs.readFileSync(file, {"encoding": "utf8"});
+}
 
-pegfile = "module.exports = " + pegfile + ";\n";
-fs.writeFileSync(path.join(__dirname,OPTIONS.PEG_OUT), pegfile, {"encoding": "utf8"});
+function buildParser(file) {
+	return pegjs.buildParser(read(file), {
+		"output": "source"
+	});
+}
+
+// dogescript
+fs.writeFileSync(OPTIONS.PEG_OUT, "module.exports = " + buildParser(OPTIONS.PEG_IN) + ";\n");
+
+// dson
+fs.writeFileSync(OPTIONS.DSON_OUT, read(OPTIONS.DSON_START) + buildParser(OPTIONS.DSON_PEG) + read(OPTIONS.DSON_END));
