@@ -10,6 +10,7 @@ dogescript files ends with the extension `.djs`. Should dogescript be ported to 
 
 ## Notes
 
+* **dogescript 3 is mostly incompatible with dogescript 2 and vice versa**
 * dogescript uses single or double quotes for strings
 * dogescript seperates statements by newlines or semicolons by default.
 * dogescript blocks are like Javascript blocks (see [below](https://github.com/idunnowhy9000/dogescript/blob/master/LANGUAGE.md#blocks))
@@ -19,6 +20,8 @@ dogescript files ends with the extension `.djs`. Should dogescript be ported to 
 ### Expressions and operators
 
 Expressions and operators work exactly like JS expressions and operators.
+
+#### Operators
 
 Several mapped operators have been introduced.
 

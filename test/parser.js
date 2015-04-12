@@ -38,10 +38,37 @@ describe("Parser", function () {
 				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"UnaryExpression","operator":"-","argument":{"type":"Literal","value":5},"prefix":true}}]}, parser.parse("-5"), "Expected -5");
 			});
 		});
+		
+		describe("parses function calls", function () {
+			it("should parse functions calls", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"CallExpression","callee":{"type":"Identifier","name":"print"},"arguments":[]}}]}, parser.parse("plz print"), "Expected print()");
+			});
+			
+			it("should parse functions calls with arguments", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"CallExpression","callee":{"type":"Identifier","name":"print"},"arguments":[{"type":"Literal","value":1},{"type":"Literal","value":2}]}}]}, parser.parse("plz print with 1, 2"), "Expected print(1, 2)");
+			});
+		});
+		
+		describe("parses assignment expression", function () {
+			it("should parse assignment expression", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"AssignmentExpression","operator":"=","left":{"type":"Identifier","name":"a"},"right":{"type":"Identifier","name":"b"}}}]}, parser.parse("a as b"), "Expected 'a = b'");
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"AssignmentExpression","operator":"+=","left":{"type":"Identifier","name":"a"},"right":{"type":"Identifier","name":"b"}}}]}, parser.parse("a more b"), "Expected 'a = b'");
+			});
+		});
+		
+		describe("parses 'new' function call", function () {
+			it("should parse 'new' function call", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"NewExpression","callee":{"type":"Identifier","name":"a"},"arguments":[]}}]}, parser.parse("new a"), "Expected 'new a'");
+			});
+			
+			it("should parse 'new' function call with arguments", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"NewExpression","callee":{"type":"Identifier","name":"a"},"arguments":[{"type":"Literal","value":1}]}}]}, parser.parse("new a with 1"), "Expected 'new a(1)'");
+			});
+		});
 	});
 	
 	describe("parses statements", function () {
-		it("parses variable declarations", function () {
+		it("should parses variable declarations", function () {
 			assert.deepEqual({"type":"Program","body":[{"type":"VariableDeclaration","declarations":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"a"},"init":null}],"kind":"var"}]}, parser.parse("very a"), "Expected 'var a'");
 			assert.deepEqual({"type":"Program","body":[{"type":"VariableDeclaration","declarations":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"a"},"init":{"type":"Literal","value":5}}],"kind":"var"}]}, parser.parse("very a is 5"), "Expected 'var a = 5'");
 			
@@ -51,12 +78,64 @@ describe("Parser", function () {
 		
 		// assignment: refer to parse expression
 		
-		it("parses wow statement", function () {
+		it("should parses wow statement", function () {
 			// todo
 		});
 		
-		it("parses trained statement", function () {
+		it("should parses trained statement", function () {
 			assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"Literal","value":"use strict"}}]}, parser.parse("trained"), "Expected 'use strict'");
+		});
+		
+		it("should parses import statement", function () {
+			// todo
+		});
+		
+		it("should parses export statement", function () {
+			// todo
+		});
+		
+		it("should parses debooger statement", function () {
+			assert.deepEqual({"type":"Program","body":[{"type":"DebuggerStatement"}]}, parser.parse("debooger"), "Expected 'debugger'");
+		});
+		
+		it("should parses bark statement", function () {
+			// todo
+		});
+		
+		it("should parses throw statement", function () {
+			assert.deepEqual({"type":"Program","body":[{"type":"ThrowStatement","argument":{"type":"Literal","value":"Error"}}]}, parser.parse("throw 'Error'"), "Expected 'throw \"Error\"'");
+		});
+	});
+	
+	describe("parses 'block-based' statements", function () {
+		describe("parses if statements", function () {
+			it("should parse if statements", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"IfStatement","test":{"type":"Literal","value":1},"consequent":{"type":"BlockStatement","body":[]},"alternate":null}]}, parser.parse("rly 1\nwow"), "Expected 'if(1) {}'");
+			});
+			
+			it("should parse if-else statements", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"IfStatement","test":{"type":"Literal","value":1},"consequent":{"type":"BlockStatement","body":[]},"alternate":{"type":"BlockStatement","body":[]}}]}, parser.parse("rly 1\nbut\nwow"), "Expected 'if(1) {} else {}'");
+			});
+			
+			it("should parse if-elif statements", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"IfStatement","test":{"type":"Literal","value":1},"consequent":{"type":"BlockStatement","body":[]},"alternate":{"type":"IfStatement","test":{"type":"Literal","value":2},"consequent":{"type":"BlockStatement","body":[]},"alternate":null}}]}, parser.parse("rly 1\nbutrly 2\nwow"), "Expected 'if(1) {} else if (2) {}'");
+			});
+			
+			it("should parse if-elif-else statements", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"IfStatement","test":{"type":"Literal","value":1},"consequent":{"type":"BlockStatement","body":[]},"alternate":{"type":"IfStatement","test":{"type":"Literal","value":2},"consequent":{"type":"BlockStatement","body":[]},"alternate":{"type":"BlockStatement","body":[]}}}]}, parser.parse("rly 1\nbutrly 2\nbut\nwow"), "Expected 'if(1) {} else if (2) {} else {}'");
+			});
+		});
+		
+		describe("parses while statement", function () {
+			// todo
+		});
+		
+		describe("parses for statement", function () {
+			// todo
+		});
+		
+		describe("parses try statement", function () {
+			// todo
 		});
 	});
 });

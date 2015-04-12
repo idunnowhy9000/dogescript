@@ -1,6 +1,6 @@
 {
   "name": "dogescript-3",
-  "version": "2.4.43",
+  "version": "2.4.5",
   "description": "an unofficial third version of dogescript",
   "main": "index.js",
   "repository": {
@@ -16,7 +16,6 @@
   "license": "MIT",
   "dependencies": {
     "escodegen": "~1.6.1",
-    "esprima": "^2.0.0",
     "estraverse": "^1.9.1",
     "optimist": "~0.6.0"
   },
@@ -30,6 +29,7 @@
   },
   "devDependencies": {
     "uglify-js": "^2.4.13",
-    "pegjs": "~0.8.0"
+    "pegjs": "~0.8.0",
+	"mocha": "^2.2.0"
   }
 }

@@ -865,13 +865,13 @@ FormalParameterList
 
 /** 2.5 If Statements */
 IfStatement
-	= "rly" __ test:Expression __ ":" NEWLINE block:Block _else:(EmptyWowStatement / ElseStatement)
+	= "rly" __ test:Expression NEWLINE block:Block _else:(EmptyWowStatement {return null;} / ElseStatement)
 	{
 		return {
 			"type": "IfStatement",
 			"test": test,
 			"consequent": block,
-			"alternate": _else // else clause hack
+			"alternate": _else 
 		};
 	}
 
