@@ -781,6 +781,9 @@ CallExpression
 			"arguments": optionalList(extractOptional(args, 3))
 		}
 	}
+	/* support old "console dose loge" notation */
+	/ iden:MemberExpression __ "with" __ args:FunctionArguments
+	{ return { "type": "CallExpression", "callee": iden, "arguments": args }; }
 	
 /* New Expressions */
 NewExpression
@@ -814,11 +817,22 @@ AssignmentExpression
 			"right": right
 		};
 	}
-	/ LogicalORExpression
+	/ ConditionalExpression
 
 AssignmentOperator
 	= "as" / "more" / "less" / "lots" / "few"
 	/ "=" / "+=" / "-=" / "*=" / "/="
+
+ConditionalExpression
+	= test:LogicalORExpression __
+	"?" __ consequent:AssignmentExpression __
+	":" __ alternate:AssignmentExpression
+	{ return { "type": "ConditionalExpression", "test": test, "consequent": consequent, "alternate": alternate }; }
+	/ test:LogicalORExpression __
+	"rly" __ consequent:AssignmentExpression __
+	"but" __ alternate:AssignmentExpression
+	{ return { "type": "ConditionalExpression", "test": test, "consequent": consequent, "alternate": alternate }; }
+	/ LogicalORExpression
 
 MemberExpression
 	= first:(
@@ -952,6 +966,38 @@ ForStatement
 			},
 			"test": extractOptional(test, 0),
 			"update": update || null,
+			"body": body
+		};
+	}
+	/ "much" __
+	left:LeftHandSideExpression __
+	"in" __
+	right:Expression NEWLINE
+	body:Block
+	EmptyWowStatement
+	{
+		return {
+			"type": "ForInStatement",
+			"left": left,
+			"right": right,
+			"body": body
+		};
+	}
+	/ "much" __
+	"very" __ declarations:VariableDeclarationList __
+	"in" __
+	right:Expression NEWLINE
+	body:Block
+	EmptyWowStatement
+	{
+		return {
+			"type": "ForInStatement",
+			"left": {
+				"type": "VariableDeclaration",
+				"declarations": declarations,
+				"kind": "var"
+			},
+			"right": right,
 			"body": body
 		};
 	}

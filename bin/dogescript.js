@@ -27,7 +27,7 @@ if (argv._[0]) {
 	// see streams documentation
 	Stream.prototype._transform = function (chunk, encoding, callback) {
 		var script = compile(parser.parse(chunk.toString()));
-		var lines  = script.split(/\n+/);
+		var lines  = script.split("\n");
 		
 		for (var i = 0; i < lines.length; i++) {
 			// ignore empty lines
