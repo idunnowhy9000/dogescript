@@ -1,8 +1,8 @@
 # dogescript spec (3.0.0)
 
-**dogescript** is a programming language made by [remixz](https://github.com/remixz) when he gone insane. **dogescript** is preferably named **dogescript** without uppercase letters.
+**dogescript** is a programming language made by [remixz](https://github.com/remixz) when he gone insane. dogescript is preferably named dogescript without uppercase letters.
 
-Below is the official (unofficial), new specification of **dogescript**
+This is an unofficial revival of the old dogescript with rewritten parser, specification,...
 
 ## Files
 
@@ -20,6 +20,18 @@ dogescript files ends with the extension `.djs`. Should dogescript be ported to 
 ### Expressions and operators
 
 Expressions and operators work exactly like JS expressions and operators.
+
+#### Expressions
+
+##### DSON
+
+DSON is supported "natively" within dogescript 3. DSON objects starts with `{{`, the DSON expression and ends with `}}`.
+
+[(for the official, complete DSON specification)](http://dogeon.org/)
+
+```
+{{such "foo" is "bar". "doge" is "shibe" wow}} shh {"foo": "bar", "doge": "shibe"}
+```
 
 #### Operators
 
@@ -66,13 +78,13 @@ loud
 
 ### Variable Declaration and Assignment
 
-The syntax for declaration in dogescript is: `very`, followed by the variable's identifier, assignment operator (`=` or `as`), and an optional expression to initialize with.
+The syntax for declaration in dogescript is: `very`, followed by the variable's identifier, assignment operator (`=` or `is`), and an optional expression to initialize with.
 
 ```
 very doge is 100                      shh Initialized variable
 very shibe                            shh Uninitialized variable
 
-shibe as 100                          shh Attribution
+shibe is 100                          shh Attribution
 shibe = 100                           shh also supported
 ```
 
@@ -92,12 +104,13 @@ wow
 
 Function declarations starts with `such`, the function's name, with optional arguments separated by a whitespace.
 
-All functions must have a `wow` statement. The syntax of it is `wow`, followed by an optional return parameter.
+All functions must end with an empty `wow` statement.
 
 ```
 such sum much arg1, arg2
 	shh Interior
-wow arg1 + arg2
+	wow arg1 + arg2
+wow
 ```
 
 #### Calling
@@ -106,6 +119,15 @@ Function calls starts with `plz`, the function's name, with optional arguments s
 
 ```
 plz sum with 1, 2
+```
+
+#### `new` expression
+
+`new` expressions begins with `new`, and the function's name to create an instance out of, with optional arguments separated by a colon.
+
+```
+new Error
+new Error with 'error'
 ```
 
 ### Branching
@@ -181,7 +203,30 @@ The `trained` statement toggles `"use strict"` mode on the code, the statement t
 
 ### Bark Statement
 
-The `bark` statement breaks out of the current block.
+The `bark` statement breaks out of the current block. `bark` translates directly to `break` in Javascript
+
+### Exceptions
+
+#### Handling
+
+Exceptions are handled with the try-catch-finally block.
+
+```
+try
+	shh do something
+catch e
+	plz console.loge with e
+finally
+	shh done
+```
+
+#### Raising
+
+To raise an exception, use `throw`, and the exception to throw at.
+
+```
+throw new Error with 'error'
+```
 
 ### Modules
 
@@ -208,7 +253,7 @@ so "hello" as "h"               shh same as the above
 The `out` statement exports a module to `module.exports`. The `out` statement starts with `out`, and then the identifier, literal, etc... to be exported.
 
 ```
-out a                          shh sets "module.exports" to identifier "a"
+out a                           shh sets "module.exports" to identifier "a"
 ```
 
 ## "Built-in objects"

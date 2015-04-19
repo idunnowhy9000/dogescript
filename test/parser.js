@@ -21,6 +21,7 @@ describe("Parser", function () {
 			
 			it("should parse member expressions", function () {
 				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"MemberExpression","computed":true,"object":{"type":"MemberExpression","computed":false,"object":{"type":"Identifier","name":"a"},"property":{"type":"Identifier","name":"b"}},"property":{"type":"Literal","value":"c"}}}]}, parser.parse('a.b["c"]'), 'Expected a.b["c"]');
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"MemberExpression","computed":true,"object":{"type":"MemberExpression","computed":false,"object":{"type":"Identifier","name":"a"},"property":{"type":"Identifier","name":"b"}},"property":{"type":"Literal","value":"c"}}}]}, parser.parse('a.b["c"]'), 'Shouldn\'t parse');
 			});
 		});
 		
@@ -30,12 +31,13 @@ describe("Parser", function () {
 			});
 			
 			it("should do comparisons", function () {
-				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"BinaryExpression","operator":"===","left":{"type":"Literal","value":1},"right":{"type":"Literal","value":1}}}]}, parser.parse("1 is 1"), "Expected 1 === 1");
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"BinaryExpression","operator":"===","left":{"type":"Literal","value":1},"right":{"type":"Literal","value":1}}}]}, parser.parse("1 === 1"), "Expected 1 === 1");
 				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"BinaryExpression","operator":"!==","left":{"type":"Literal","value":1},"right":{"type":"Literal","value":1}}}]}, parser.parse("1 not 1"), "Expected 1 !== 1");
 			});
 			
 			it("should do unary operators", function () {
 				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"UnaryExpression","operator":"-","argument":{"type":"Literal","value":5},"prefix":true}}]}, parser.parse("-5"), "Expected -5");
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"UpdateExpression","operator":"++","argument":{"type":"Identifier","name":"a"},"prefix":false}}]}, parser.parse("a++"), "Expected a++");
 			});
 		});
 		
@@ -52,7 +54,6 @@ describe("Parser", function () {
 		describe("parses assignment expression", function () {
 			it("should parse assignment expression", function () {
 				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"AssignmentExpression","operator":"=","left":{"type":"Identifier","name":"a"},"right":{"type":"Identifier","name":"b"}}}]}, parser.parse("a as b"), "Expected 'a = b'");
-				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"AssignmentExpression","operator":"+=","left":{"type":"Identifier","name":"a"},"right":{"type":"Identifier","name":"b"}}}]}, parser.parse("a more b"), "Expected 'a = b'");
 			});
 		});
 		
@@ -76,10 +77,12 @@ describe("Parser", function () {
 			assert.deepEqual({"type":"Program","body":[{"type":"VariableDeclaration","declarations":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"a"},"init":{"type":"Literal","value":5}}],"kind":"const"}]}, parser.parse("always a is 5"), "Expected 'const a = 5'");
 		});
 		
-		// assignment: refer to parse expression
+		it("should parse assignment statements", function () {
+			assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"AssignmentExpression","operator":"=","left":{"type":"Identifier","name":"a"},"right":{"type":"Literal","value":1}}}]}, parser.parse("a is 1"), "Expected 'a = 1'");
+		});
 		
 		it("should parses wow statement", function () {
-			// todo
+			assert.deepEqual({"type":"Program","body":[{"type":"ReturnStatement","argument":{"type":"Literal","value":1}}]}, parser.parse("wow 1"), "Expected 'return 1;'");
 		});
 		
 		it("should parses trained statement", function () {

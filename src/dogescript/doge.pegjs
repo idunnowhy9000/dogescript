@@ -71,6 +71,10 @@
 		return optional ? optional[index] : null;
 	}
 	
+	function extractOptionalList(optional, index) {
+		return Array.isArray(optional) ? optional[index]: [];
+	}
+	
 	function toOP(str) {
 		return keyMapping[str] || str;
 	}
@@ -94,12 +98,12 @@
 		if (m) {
 			mod = m[1];
 		}
-		mod = mod.replace(/-/g, '_');
+		mod = mod.replace(/-/, '_');
 		return mod;
 	}
 	
 	function parseDecLiteral(str) {
-		return str.replace(/(very|VERY)/, "e");
+		return parseFloat(str.replace(/very/i, "e"));
 	}
 	
 	function buildTree(first, rest, builder) {
@@ -232,7 +236,7 @@ SourceElement
 /* Statement */
 Statement
 	= AssignmentStatement
-	/ DeclarationStatement
+	/ VariableStatement
 	/ ExpressionStatement
 	/ WowStatement
 	/ TrainedStatement
@@ -243,34 +247,29 @@ Statement
 	/ ThrowStatement
 
 /* Variable declarations */
-DeclarationStatement
-	= "very" __ iden:Identifier expr:(__ "is" __ Expression)? EOS
+VariableStatement
+	= type:VariableDeclarationType __ decl:VariableDeclarationList EOS
 	{
 		return {
 			"type": "VariableDeclaration",
-			"declarations": [
-				{
-					"type": "VariableDeclarator",
-					"id": iden,
-					"init": extractOptional(expr, 3)
-				}
-			],
-			"kind": "var"
+			"declarations": decl,
+			"kind": type === "very" ? "var" : "const"
 		};
 	}
-	/* Constant declarations require rhs expression */
-	/ "always" __ iden:Identifier expr:(__ "is" __ Expression)? EOS
+
+VariableDeclarationType = "very" / "always"
+
+VariableDeclarationList
+	= first:VariableDeclaration rest:(__ "," __ VariableDeclaration)*
+	{ return buildList(first, rest, 3); }
+
+VariableDeclaration
+	= iden:Identifier expr:(__ "is" __ Expression)?
 	{
 		return {
-			"type": "VariableDeclaration",
-			"declarations": [
-				{
-					"type": "VariableDeclarator",
-					"id": iden,
-					"init": extractOptional(expr, 3)
-				}
-			],
-			"kind": "const"
+			type: "VariableDeclarator",
+			id: iden,
+			init: extractOptional(expr, 3)
 		};
 	}
 
@@ -279,11 +278,14 @@ AssignmentStatement
 	=  left:LeftHandSideExpression __ ("=" / "is") __ right:Expression EOS
 	{
 		return {
-			"type": "AssignmentExpression",
-			"operator": "=",
-			"left": left,
-			"right": right
-		};
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "AssignmentExpression",
+                "operator": "=",
+                "left": left,
+                "right": right
+            }
+        };
 	}
 
 /* Wow: ends block */
@@ -484,21 +486,21 @@ DecimalLiteral
 	{
 		return {
 			"type": "Literal",
-			"value": parseFloat(parseDecLiteral(text()))
+			"value": parseDecLiteral(text())
 		};
 	}
 	/ "." DecimalDigit+ ExponentPart?
 	{
 		return {
 			"type": "Literal",
-			"value": parseFloat(parseDecLiteral(text()))
+			"value": parseDecLiteral(text())
 		};
 	}
 	/ DecimalIntegerLiteral+ ExponentPart?
 	{
 		return {
 			"type": "Literal",
-			"value": parseInt(parseDecLiteral(text()))
+			"value": parseDecLiteral(text())
 		};
 	}
 
@@ -523,21 +525,44 @@ SignedInteger
 	= [+-]? DecimalDigit+
 
 /* String Literals */
-StringLiteral
-	= "'" literal:SourceCharacterNoQuote1* "'"
-	{
-		return {
-			"type": "Literal",
-			"value": literal.join("")
-		};
+StringLiteral "string"
+	= '"' chars:DoubleStringCharacter* '"' {
+		return { type: "Literal", value: chars.join("") };
 	}
-	/ '"' literal:SourceCharacterNoQuote2* '"'
-	{
-		return {
-			"type": "Literal",
-			"value": literal.join("")
-		};
+	/ "'" chars:SingleStringCharacter* "'" {
+		return { type: "Literal", value: chars.join("") };
 	}
+
+DoubleStringCharacter
+	= !('"' / "\\" / LineTerminator) SourceCharacter { return text(); }
+	/ "\\" sequence:EscapeSequence { return sequence; }
+	/ LineContinuation
+
+SingleStringCharacter
+	= !("'" / "\\" / LineTerminator) SourceCharacter { return text(); }
+	/ "\\" sequence:EscapeSequence { return sequence; }
+	/ LineContinuation
+
+LineContinuation
+	= "\\" LineTerminatorSequence { return ""; }
+
+EscapeSequence
+	= CharacterEscapeSequence
+	/ "0" !DecimalDigit { return "\0"; }
+
+CharacterEscapeSequence
+	= SingleEscapeCharacter
+
+SingleEscapeCharacter
+	= "'"
+	/ '"'
+	/ "\\"
+	/ "b"  { return "\b"; }
+	/ "f"  { return "\f"; }
+	/ "n"  { return "\n"; }
+	/ "r"  { return "\r"; }
+	/ "t"  { return "\t"; }
+	/ "v"  { return "\x0B"; }   // IE does not recognize "\v".
 
 /* Object Literals */
 ObjectLiteral
@@ -694,7 +719,7 @@ LogicalANDOperator
 	= "and" / "&&"
 
 LeftHandSideExpression
-	= FunctionCallExpression / NewExpression
+	= CallExpression / NewExpression
 
 /* Unary expressions */
 PostfixExpression
@@ -714,7 +739,7 @@ PostfixOperator
 
 UnaryExpression
 	= PostfixExpression
-	/ op:UnaryOperator __ argument:UnaryExpression
+	/ op:UnaryOperator _ argument:UnaryExpression
 	{
 		return {
 			"type": "UnaryExpression",
@@ -747,13 +772,13 @@ RelationalOperator
 	/ "<=" / "<" / ">=" / ">" / "instanceof"
 
 /* Function Call Expressions */
-FunctionCallExpression
+CallExpression
 	= "plz" __ iden:MemberExpression args:(__ "with" __ FunctionArguments)?
 	{
 		return {
 			"type": "CallExpression",
 			"callee": iden,
-			"arguments": extractOptional(args, 3) || []
+			"arguments": optionalList(extractOptional(args, 3))
 		}
 	}
 	
@@ -817,16 +842,14 @@ MemberExpression
 		}
 	)*
 	{
-		var result = first, i;
-		for (i = 0; i < rest.length; i++){
-			result = {
-				"type": "MemberExpression",
-				"object": result,
-				"property": rest[i].property,
-				"computed": rest[i].computed,
+		return buildTree(first, rest, function(result, element) {
+			return {
+				type: "MemberExpression",
+				object: result,
+				property: element.property,
+				computed: element.computed
 			};
-		}
-		return result;
+		});
 	}
 
 /** 2.4 Function declarations */
@@ -836,22 +859,22 @@ FunctionDeclaration
 		return {
 			"type": "FunctionDeclaration",
 			"id": iden,
-			"params": args ? args[3] : [],
+			"params": extractOptionalList(args, 3),
 			"body": block,
 			
-			"rest": null,
 			"generator": false,
 			"expression": false
 		}
 	}
 
+/* FunctionExpression: buggy but works? */
 FunctionExpression	
-	= "much" __ args:(FormalParameterList)? NEWLINE body:Block EmptyWowStatement
+	= "much" args:(__ FormalParameterList)? NEWLINE body:Block EmptyWowStatement
 	{
 		return {
 			"type": "FunctionExpression",
 			"id": null,
-			"params": optionalList(args),
+			"params": extractOptionalList(args, 1),
 			"body": body
 		};
 	}
@@ -899,7 +922,7 @@ WhileStatement
 /** 2.7 For Statements */
 ForStatement
 	= "much" __
-	init:("very" __ AssignmentExpression __)? ForNext __
+	init:(Expression __)? ForNext __
 	test:(Expression __)? ForNext __
 	update:Expression? NEWLINE
 	body:Block
@@ -909,7 +932,26 @@ ForStatement
 			"type": "ForStatement",
 			"init": extractOptional(init, 0),
 			"test": extractOptional(test, 0),
-			"update": update,
+			"update": update || null,
+			"body": body
+		};
+	}
+	/ "much" __
+	"very" __ declarations:VariableDeclarationList __ ForNext __
+	test:(Expression __)? ForNext __
+	update:Expression? NEWLINE
+	body:Block
+	EmptyWowStatement
+	{
+		return {
+			"type": "ForStatement",
+			"init": {
+				"type": "VariableDeclaration",
+				"declarations": declarations,
+				"kind": "var"
+			},
+			"test": extractOptional(test, 0),
+			"update": update || null,
 			"body": body
 		};
 	}

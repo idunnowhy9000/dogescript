@@ -13,7 +13,7 @@ var OPTIONS = {
 	"DSON_START": "./src/dson/dson-start.js",
 	"DSON_END": "./src/dson/dson-end.js",
 	"DSON_OUT": "./lib/dson.js"
-}
+};
 
 function read(file) {
 	return fs.readFileSync(file, {"encoding": "utf8"});
@@ -30,3 +30,5 @@ fs.writeFileSync(OPTIONS.PEG_OUT, "module.exports = " + buildParser(OPTIONS.PEG_
 
 // dson
 fs.writeFileSync(OPTIONS.DSON_OUT, read(OPTIONS.DSON_START) + buildParser(OPTIONS.DSON_PEG) + read(OPTIONS.DSON_END));
+
+console.log("Built successfully.");
