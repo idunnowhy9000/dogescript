@@ -9,7 +9,7 @@ loud
 trained
 
 so dogeudle
-so boring as wow
+so boring as woah
 
 very dogescript is 'such messy; very doge-friendly'
 
@@ -48,17 +48,17 @@ wow
 
 shh doge style
 very science is 4
-           much  very so as 1 next so smaller 10 next so more 1
-    rly so bigger 2
-                   plz console.loge with {such: so}
+           much  very wut as 1 next wut smaller 10 next wut more 1
+    rly wut bigger 2
+                   plz console.loge with {such: wut}
       wow
                       wow
 
 
 shh chaining
-very canvas is plz d3.select with 'body'&
-dose append with 'canvas'&
-dose attr with 'width', width&
+very canvas is plz d3.select with 'body'
+dose append with 'canvas'
+dose attr with 'width', width
 dose attr with 'height', height
 
 very regex is new RegExp with keyword, 'g'
@@ -72,15 +72,16 @@ module.exports as woof
 
 shh example http server
 so http
-http dose createServer with much req res
-   req dose writeHead with 200 {'Content-Type': 'text/plain'}
-   req dose end with 'so hello\nmuch world'
-wow&
-.plz listen with 8080
+http dose createServer with much req, res
+
+   req dose writeHead with 200 {'Content-Type': 'text/plain'} dose end with 'so hello\nmuch world'
+
+wow
+dose listen with 8080
 
 windoge.doge as 'so global, no scope wow'
 very dogelement as plz dogeument.createElement with 'doge'
 
-very multiObj is obj
+very multiObj is {
   test: ['wow']
-wow
+}

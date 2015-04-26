@@ -15,13 +15,16 @@ describe("Parser", function () {
 				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"Identifier","name":"apple"}}]}, parser.parse('apple'), "Expected identifier 'apple'");
 				
 				// booleans
-				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"Literal","value":true}}]}, parser.parse('true'), "Expected identifier 'true'");
-				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"Literal","value":false}}]}, parser.parse('false'), "Expected identifier 'false'");
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"Literal","value":true}}]}, parser.parse('yes'), "Expected identifier 'true'");
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"Literal","value":false}}]}, parser.parse('no'), "Expected identifier 'false'");
+				
+				// null
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"Literal","value":null}}]}, parser.parse('null'), "Expected identifier 'null'");
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"Literal","value":null}}]}, parser.parse('empty'), "Expected identifier 'null'");
 			});
 			
 			it("should parse member expressions", function () {
 				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"MemberExpression","computed":true,"object":{"type":"MemberExpression","computed":false,"object":{"type":"Identifier","name":"a"},"property":{"type":"Identifier","name":"b"}},"property":{"type":"Literal","value":"c"}}}]}, parser.parse('a.b["c"]'), 'Expected a.b["c"]');
-				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"MemberExpression","computed":true,"object":{"type":"MemberExpression","computed":false,"object":{"type":"Identifier","name":"a"},"property":{"type":"Identifier","name":"b"}},"property":{"type":"Literal","value":"c"}}}]}, parser.parse('a.b["c"]'), 'Shouldn\'t parse');
 			});
 		});
 		
@@ -44,6 +47,10 @@ describe("Parser", function () {
 		describe("parses function calls", function () {
 			it("should parse functions calls", function () {
 				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"CallExpression","callee":{"type":"Identifier","name":"print"},"arguments":[]}}]}, parser.parse("plz print"), "Expected print()");
+			});
+			
+			it("should parse old function calls", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"CallExpression","callee":{"type":"MemberExpression","computed":false,"object":{"type":"Identifier","name":"console"},"property":{"type":"Identifier","name":"log"}},"arguments":[{"type":"Literal","value":"abc"}]}}]}, parser.parse("console dose log with 'abc'"), "Expected 'console.log(\"abc\")'");
 			});
 			
 			it("should parse functions calls with arguments", function () {
@@ -69,7 +76,7 @@ describe("Parser", function () {
 	});
 	
 	describe("parses statements", function () {
-		it("should parses variable declarations", function () {
+		it("should parse variable declarations", function () {
 			assert.deepEqual({"type":"Program","body":[{"type":"VariableDeclaration","declarations":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"a"},"init":null}],"kind":"var"}]}, parser.parse("very a"), "Expected 'var a'");
 			assert.deepEqual({"type":"Program","body":[{"type":"VariableDeclaration","declarations":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"a"},"init":{"type":"Literal","value":5}}],"kind":"var"}]}, parser.parse("very a is 5"), "Expected 'var a = 5'");
 			
@@ -81,36 +88,35 @@ describe("Parser", function () {
 			assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"AssignmentExpression","operator":"=","left":{"type":"Identifier","name":"a"},"right":{"type":"Literal","value":1}}}]}, parser.parse("a is 1"), "Expected 'a = 1'");
 		});
 		
-		it("should parses wow statement", function () {
+		it("should parse wow statement", function () {
 			assert.deepEqual({"type":"Program","body":[{"type":"ReturnStatement","argument":{"type":"Literal","value":1}}]}, parser.parse("wow 1"), "Expected 'return 1;'");
 		});
 		
-		it("should parses trained statement", function () {
+		it("should parse trained statement", function () {
 			assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"Literal","value":"use strict"}}]}, parser.parse("trained"), "Expected 'use strict'");
 		});
 		
-		it("should parses import statement", function () {
-			// todo
+		it("should parse import statement", function () {
+			assert.deepEqual({"type":"Program","body":[{"type":"VariableDeclaration","declarations":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"abc"},"init":{"type":"CallExpression","callee":{"type":"Identifier","name":"require"},"arguments":[{"type":"Literal","value":"abc"}]}}],"kind":"var"}]}, parser.parse("so abc"), "Expected 'var abc = require(\"abc\")'");
+			assert.deepEqual({"type":"Program","body":[{"type":"VariableDeclaration","declarations":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"test"},"init":{"type":"CallExpression","callee":{"type":"Identifier","name":"require"},"arguments":[{"type":"Literal","value":"test.js"}]}}],"kind":"var"}]}, parser.parse('so "test.js"'), "Expected 'var test = require(\"test.js\")'");
 		});
 		
-		it("should parses export statement", function () {
-			// todo
+		it("should parse export statement", function () {
+			assert.deepEqual({"type":"Program","body":[{"type":"ExpressionStatement","expression":{"type":"AssignmentExpression","operator":"=","left":{"type":"MemberExpression","computed":false,"object":{"type":"Identifier","name":"module"},"property":{"type":"Identifier","name":"exports"}},"right":{"type":"Literal","value":1}}}]}, parser.parse('out 1'), "Expected 'module.exports = 1'");
 		});
 		
-		it("should parses debooger statement", function () {
+		it("should parse debooger statement", function () {
 			assert.deepEqual({"type":"Program","body":[{"type":"DebuggerStatement"}]}, parser.parse("debooger"), "Expected 'debugger'");
 		});
 		
-		it("should parses bark statement", function () {
-			// todo
+		it("should parse bark statement", function () {
+			assert.deepEqual({"type":"Program","body":[{"type":"BreakStatement"}]}, parser.parse("bark"), "Expected 'break'");
 		});
 		
-		it("should parses throw statement", function () {
+		it("should parse throw statement", function () {
 			assert.deepEqual({"type":"Program","body":[{"type":"ThrowStatement","argument":{"type":"Literal","value":"Error"}}]}, parser.parse("throw 'Error'"), "Expected 'throw \"Error\"'");
 		});
-	});
 	
-	describe("parses 'block-based' statements", function () {
 		describe("parses if statements", function () {
 			it("should parse if statements", function () {
 				assert.deepEqual({"type":"Program","body":[{"type":"IfStatement","test":{"type":"Literal","value":1},"consequent":{"type":"BlockStatement","body":[]},"alternate":null}]}, parser.parse("rly 1\nwow"), "Expected 'if(1) {}'");
@@ -121,24 +127,46 @@ describe("Parser", function () {
 			});
 			
 			it("should parse if-elif statements", function () {
-				assert.deepEqual({"type":"Program","body":[{"type":"IfStatement","test":{"type":"Literal","value":1},"consequent":{"type":"BlockStatement","body":[]},"alternate":{"type":"IfStatement","test":{"type":"Literal","value":2},"consequent":{"type":"BlockStatement","body":[]},"alternate":null}}]}, parser.parse("rly 1\nbutrly 2\nwow"), "Expected 'if(1) {} else if (2) {}'");
+				assert.deepEqual({"type":"Program","body":[{"type":"IfStatement","test":{"type":"Literal","value":1},"consequent":{"type":"BlockStatement","body":[]},"alternate":{"type":"IfStatement","test":{"type":"Literal","value":2},"consequent":{"type":"BlockStatement","body":[]},"alternate":null}}]}, parser.parse("rly 1\nbut rly 2\nwow"), "Expected 'if(1) {} else if (2) {}'");
 			});
 			
 			it("should parse if-elif-else statements", function () {
-				assert.deepEqual({"type":"Program","body":[{"type":"IfStatement","test":{"type":"Literal","value":1},"consequent":{"type":"BlockStatement","body":[]},"alternate":{"type":"IfStatement","test":{"type":"Literal","value":2},"consequent":{"type":"BlockStatement","body":[]},"alternate":{"type":"BlockStatement","body":[]}}}]}, parser.parse("rly 1\nbutrly 2\nbut\nwow"), "Expected 'if(1) {} else if (2) {} else {}'");
+				assert.deepEqual({"type":"Program","body":[{"type":"IfStatement","test":{"type":"Literal","value":1},"consequent":{"type":"BlockStatement","body":[]},"alternate":{"type":"IfStatement","test":{"type":"Literal","value":2},"consequent":{"type":"BlockStatement","body":[]},"alternate":{"type":"BlockStatement","body":[]}}}]}, parser.parse("rly 1\nbut rly 2\nbut\nwow"), "Expected 'if(1) {} else if (2) {} else {}'");
 			});
 		});
 		
-		describe("parses while statement", function () {
-			// todo
+		it("should parse while statement", function () {
+			assert.deepEqual({"type":"Program","body":[{"type":"WhileStatement","test":{"type":"Literal","value":1},"body":{"type":"BlockStatement","body":[]}}]}, parser.parse("many 1\nwow"), "Expected 'while(1) {}'");
 		});
 		
-		describe("parses for statement", function () {
-			// todo
+		describe("should parse for statement", function () {
+			it("should parse for-expr statements", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"ForStatement","init":null,"test":null,"update":null,"body":{"type":"BlockStatement","body":[]}}]}, parser.parse("much next next\nwow"), "Expected 'for(;;) {}'");
+				
+				assert.deepEqual({"type":"Program","body":[{"type":"ForStatement","init":{"type":"VariableDeclaration","declarations":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"i"},"init":null}],"kind":"var"},"test":null,"update":null,"body":{"type":"BlockStatement","body":[]}}]}, parser.parse("much very i next next\nwow"), "Expected 'for(var i;;) {}'");
+				
+				assert.deepEqual({"type":"Program","body":[{"type":"ForStatement","init":{"type":"VariableDeclaration","declarations":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"i"},"init":{"type":"Literal","value":0}}],"kind":"var"},"test":null,"update":null,"body":{"type":"BlockStatement","body":[]}}]}, parser.parse("much very i as 0 next next\nwow"), "Expected 'for(var i = 0;;) {}'");
+			});
+			
+			it("should parse for-in statements", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"ForInStatement","left":{"type":"Identifier","name":"i"},"right":{"type":"Literal","value":1},"body":{"type":"BlockStatement","body":[]}}]}, parser.parse("much i in 1\nwow"), "Expected 'for (i in 1) {}");
+				
+				assert.deepEqual({"type":"Program","body":[{"type":"ForInStatement","left":{"type":"VariableDeclaration","declarations":[{"type":"VariableDeclarator","id":{"type":"Identifier","name":"i"},"init":null}],"kind":"var"},"right":{"type":"Literal","value":1},"body":{"type":"BlockStatement","body":[]}}]}, parser.parse("much very i in 1\nwow"), "Expected 'for (var i in 1) {}");
+			});
 		});
 		
 		describe("parses try statement", function () {
-			// todo
+			it("should parse try-catch statements", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"TryStatement","block":{"type":"BlockStatement","body":[]},"handler":{"type":"CatchClause","param":{"type":"Identifier","name":"e"},"body":{"type":"BlockStatement","body":[]}},"finalizer":null}]}, parser.parse("try\ncatch e\nwow"), "Expected 'try{} catch(e){}'");
+			});
+			
+			it("should parse try-finally statements", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"TryStatement","block":{"type":"BlockStatement","body":[]},"handler":null,"finalizer":{"type":"BlockStatement","body":[]}}]}, parser.parse("try\nretrieve\nwow"), "Expected 'try{} finally{}'");
+			});
+			
+			it("should parse try-catch-finally statements", function () {
+				assert.deepEqual({"type":"Program","body":[{"type":"TryStatement","block":{"type":"BlockStatement","body":[]},"handler":{"type":"CatchClause","param":{"type":"Identifier","name":"e"},"body":{"type":"BlockStatement","body":[]}},"finalizer":{"type":"BlockStatement","body":[]}}]}, parser.parse("try\ncatch e\nretrieve\nwow"), "Expected 'try{}catch(e){}finally{}");
+			});
 		});
 	});
 });

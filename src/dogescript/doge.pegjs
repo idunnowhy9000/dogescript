@@ -1,23 +1,4 @@
 {
-	var keyMapping = {
-		"is": "===",
-		"not": "!==",
-		"and": "&&",
-		"or": "||",
-		"smaller": "<",
-		"bigger": ">",
-		"smallerish": "<=",
-		"biggerish": ">=",
-		"notrly": "!",
-		"dogeof": "typeof",
-		"shibeof": "instanceof",
-		"as": '=',
-		"more": "+=",
-		"less": "-=",
-		"lots": "*=",
-		"few": "/=",
-	};
-	
 	var maybeOP = {
 		"type": "UnaryExpression",
 		"operator": "!",
@@ -50,11 +31,11 @@
 	}
 
 	function optionalList(value) {
-		return value != null ? value : [];
+		return value !== null ? value : [];
 	}
 	
 	function optionalStr(value) {
-		return value != null ? value : "";
+		return value !== null ? value : "";
 	}
 	
 	function extractList(list, index) {
@@ -75,14 +56,6 @@
 		return Array.isArray(optional) ? optional[index]: [];
 	}
 	
-	function toOP(str) {
-		return keyMapping[str] || str;
-	}
-	
-	function toId(str) {
-		return idenMapping[str] || str;
-	}
-	
 	function filledArray(count, value) {
 		var result = new Array(count), i;
 
@@ -94,11 +67,11 @@
 	}
 	
 	function moduleName(str) {
-		var mod = str, m = /^..?\/.*?([\w-]+)(\.\w+)?$/.exec(str);
-		if (m) {
+		var mod = str, m = /(.*)\.[^.]+$/.exec(str);
+		if (m !== null) {
 			mod = m[1];
 		}
-		mod = mod.replace(/-/, '_');
+		mod = mod.replace('-', '_');
 		return mod;
 	}
 	
@@ -118,7 +91,7 @@
 		return buildTree(first, rest, function(result, element) {
 			return {
 				type: "BinaryExpression",
-				operator: toOP(element[1]),
+				operator: element[1],
 				left: result,
 				right: element[3]
 			};
@@ -129,7 +102,7 @@
 		return buildTree(first, rest, function(result, element) {
 			return {
 				type: "LogicalExpression",
-				operator: toOP(element[1]),
+				operator: element[1],
 				left: result,
 				right: element[3]
 			};
@@ -198,7 +171,7 @@ MultiLineCommentNoLineTerminator
 SingleLineComment
 	= "shh" (!LineTerminator SourceCharacter)*
 
-NEWLINE = [\n\r]
+NEWLINE "newline" = [\n\r]
 
 /** Skipped */
 __
@@ -206,6 +179,63 @@ __
 
 _
 	= (WhiteSpace / MultiLineCommentNoLineTerminator)*
+
+/* Tokens */
+VeryToken       = "very"          !IdentifierPart
+AlwaysToken     = "always"        !IdentifierPart
+IsToken         = "is"            !IdentifierPart
+AsToken         = "as"            !IdentifierPart
+WowToken        = "wow"           !IdentifierPart
+TrainedToken    = "trained"       !IdentifierPart
+SoToken         = "so"            !IdentifierPart
+AsToken         = "as"            !IdentifierPart
+OutToken        = "out"           !IdentifierPart
+DeboogerToken   = "debooger"      !IdentifierPart
+BarkToken       = "bark"          !IdentifierPart
+ThisToken       = "this"          !IdentifierPart
+SuchToken       = "such"          !IdentifierPart
+PlzToken        = "plz"           !IdentifierPart
+DoseToken       = "dose"          !IdentifierPart
+RlyToken        = "rly"           !IdentifierPart
+ButToken        = "but"           !IdentifierPart
+ManyToken       = "many"          !IdentifierPart
+MuchToken       = "much"          !IdentifierPart
+NotrlyToken     = "notrly"        !IdentifierPart
+DogeofToken     = "dogeof"        !IdentifierPart
+MaybeToken      = "maybe"         !IdentifierPart
+YesToken        = "yes"           !IdentifierPart
+NoToken         = "no"            !IdentifierPart
+EmptyToken      = "empty"         !IdentifierPart
+RetrieveToken   = "retrieve"      !IdentifierPart
+TypeofToken     = "typeof"        !IdentifierPart
+TrueToken       = "true"          !IdentifierPart
+FalseToken      = "false"         !IdentifierPart
+NullToken       = "null"          !IdentifierPart
+VoidToken       = "void"          !IdentifierPart
+DeleteToken     = "delete"        !IdentifierPart
+CatchToken      = "catch"         !IdentifierPart
+NewToken        = "new"           !IdentifierPart
+NotToken        = "not"           !IdentifierPart
+SmallerToken    = "smaller"       !IdentifierPart
+SmallerishToken = "smallerish"    !IdentifierPart
+BiggerToken     = "bigger"        !IdentifierPart
+BiggerishToken  = "biggerish"     !IdentifierPart
+ShibeofToken    = "shibeof"       !IdentifierPart
+InstanceofToken = "instanceof"    !IdentifierPart
+WithToken       = "with"          !IdentifierPart
+MoreToken       = "more"          !IdentifierPart
+LessToken       = "less"          !IdentifierPart
+LotsToken       = "lots"          !IdentifierPart
+FewToken        = "few"           !IdentifierPart
+InToken         = "in"            !IdentifierPart
+NextToken       = "next"          !IdentifierPart
+ThrowToken      = "throw"         !IdentifierPart
+TryToken        = "try"           !IdentifierPart
+CatchToken      = "catch"         !IdentifierPart
+RetrieveToken   = "retrieve"      !IdentifierPart
+AndToken        = "and"           !IdentifierPart
+OrToken         = "or"            !IdentifierPart
+AlsoToken       = "also"          !IdentifierPart
 
 /** 2. Grammar Rules */
 
@@ -227,10 +257,6 @@ SourceElements
 SourceElement
 	= Statement
 	/ FunctionDeclaration
-	/ IfStatement
-	/ WhileStatement
-	/ ForStatement
-	/ TryStatement
 
 /** 2.1 Statements */
 /* Statement */
@@ -245,6 +271,10 @@ Statement
 	/ DeboogerStatement
 	/ BarkStatement
 	/ ThrowStatement
+	/ IfStatement
+	/ WhileStatement
+	/ ForStatement
+	/ TryStatement
 
 /* Variable declarations */
 VariableStatement
@@ -253,18 +283,19 @@ VariableStatement
 		return {
 			"type": "VariableDeclaration",
 			"declarations": decl,
-			"kind": type === "very" ? "var" : "const"
+			"kind": type
 		};
 	}
 
-VariableDeclarationType = "very" / "always"
+VariableDeclarationType
+	= VeryToken {return "var"} / AlwaysToken {return "const"}
 
 VariableDeclarationList
 	= first:VariableDeclaration rest:(__ "," __ VariableDeclaration)*
 	{ return buildList(first, rest, 3); }
 
 VariableDeclaration
-	= iden:Identifier expr:(__ "is" __ Expression)?
+	= iden:Identifier expr:(__ VariableDeclarationOperator __ Expression)?
 	{
 		return {
 			type: "VariableDeclarator",
@@ -273,9 +304,12 @@ VariableDeclaration
 		};
 	}
 
+VariableDeclarationOperator
+	= IsToken / AsToken / ("=" !"=")
+
 /* AssignmentStatement */
 AssignmentStatement
-	=  left:LeftHandSideExpression __ ("=" / "is") __ right:Expression EOS
+	=  left:LeftHandSideExpression __ (("=" !"=") / IsToken) __ right:Expression EOS
 	{
 		return {
             "type": "ExpressionStatement",
@@ -290,7 +324,7 @@ AssignmentStatement
 
 /* Wow: ends block */
 WowStatement
-	= "wow" _ v:Expression EOS
+	= WowToken _ v:Expression EOS
 	{
 		return {
 			"type": "ReturnStatement",
@@ -298,7 +332,7 @@ WowStatement
 		}
 	}
 
-EmptyWowStatement = "wow" EOS
+EmptyWowStatement = WowToken
 
 /* ExpressionStatement */
 ExpressionStatement
@@ -312,7 +346,7 @@ ExpressionStatement
 
 /* Trained Statement */
 TrainedStatement
-	= "trained" EOS
+	= TrainedToken EOS
 	{
 		return {
 			"type": "ExpressionStatement",
@@ -325,7 +359,7 @@ TrainedStatement
 
 /* ImportStatement */
 ImportStatement
-	= "so" __ str:(Identifier / StringLiteral) as:(__ "as" __ (Identifier / StringLiteral))? EOS
+	= SoToken __ str:(Identifier / StringLiteral) as:(__ AsToken __ (Identifier / StringLiteral))? EOS
 	{
 		var _as = optionalList(extractOptional(as, 3));
 		var asName;
@@ -365,7 +399,7 @@ ImportStatement
 
 /* Export Statement */
 ExportStatement
-	= "out" __ expr:Expression
+	= OutToken __ expr:Expression EOS
 	{
 		return {
 			"type": "ExpressionStatement",
@@ -391,7 +425,7 @@ ExportStatement
 
 /* DeboogerStatement */
 DeboogerStatement
-	= "debooger" EOS
+	= DeboogerToken EOS
 	{
 		return {
 			"type": "DebuggerStatement"
@@ -400,7 +434,7 @@ DeboogerStatement
 
 /* Bark Statement */
 BarkStatement
-	= "bark" EOS
+	= BarkToken EOS
 	{
 		return {
 			"type": "BreakStatement"
@@ -433,7 +467,7 @@ Literal
 	/ DSONLiteral
 
 thisValue
-	= "this"
+	= ThisToken
 	{
 		return {
 			"type": "ThisExpression"
@@ -460,21 +494,69 @@ IdentifierPart
 	= IdentifierStart
 	/ [0-9]
 
-/* Reserved Words */
+/* Reserved Words (keywords) */
 ReservedWord
-	= "such" / "wow" / "plz" / "dose" / "very" / "shh" / "quiet" / "loud" / "rly" / "but" / "many" / "much" / "so" / "trained" / "debooger" / "bark" / "always" / "notrly" / "dogeof" / "maybe" / "yes" / $(!"notrly" "no") / "empty" / "retrieve"
-	/ "typeof" / "true" / "false" / "null" / "void" / "delete" / "try" / "catch" / "new"
+	= VeryToken
+	/ AlwaysToken
+	/ IsToken
+	/ AsToken
+	/ WowToken
+	/ TrainedToken
+	/ SoToken
+	/ OutToken
+	/ DeboogerStatement
+	/ BarkToken
+	/ ThisToken
+	/ SuchToken
+	/ PlzToken
+	/ DoseToken
+	/ RlyToken
+	/ ButToken
+	/ ManyToken
+	/ MuchToken
+	/ NotrlyToken
+	/ DogeofToken
+	/ MaybeToken
+	/ YesToken
+	/ NotToken
+	/ EmptyToken
+	/ TypeofToken
+	/ TrueToken
+	/ FalseToken
+	/ NullToken
+	/ VoidToken
+	/ DeleteToken
+	/ CatchToken
+	/ NewToken
+	/ SmallerToken
+	/ SmallerishToken
+	/ BiggerToken
+	/ BiggerishToken
+	/ ShibeofToken
+	/ InstanceofToken
+	/ WithToken
+	/ MoreToken
+	/ LessToken
+	/ LotsToken
+	/ FewToken
+	/ NextToken
+	/ ThrowToken
+	/ TryToken
+	/ RetrieveToken
+	/ AndToken
+	/ OrToken
+	/ AlsoToken
 
 /** Literals */
 /* Null Literals */
 NullLiteral
-	= ("null" / "empty") { return { type: "Literal", value: null }; }
+	= (NullToken / EmptyToken) { return { type: "Literal", value: null }; }
 
 /* Boolean Literals */
 BooleanLiteral
-	= ("true" / "yes") { return { type: "Literal", value: true }; }
-	/ ("false" / $(!"notrly" "no")) { return { type: "Literal", value: false }; }
-	/ "maybe" { return maybeOP; }
+	= (TrueToken / YesToken) { return { type: "Literal", value: true }; }
+	/ (FalseToken / NoToken) { return { type: "Literal", value: false }; }
+	/ MaybeToken { return maybeOP; }
 
 /* Numeric Literals */
 NumericLiteral
@@ -483,26 +565,11 @@ NumericLiteral
 /* Decimal Literals */
 DecimalLiteral
 	= DecimalIntegerLiteral "." DecimalDigit* ExponentPart?
-	{
-		return {
-			"type": "Literal",
-			"value": parseDecLiteral(text())
-		};
-	}
+	{ return { "type": "Literal", "value": parseDecLiteral(text()) }; }
 	/ "." DecimalDigit+ ExponentPart?
-	{
-		return {
-			"type": "Literal",
-			"value": parseDecLiteral(text())
-		};
-	}
+	{ return { "type": "Literal", "value": parseDecLiteral(text()) }; }
 	/ DecimalIntegerLiteral+ ExponentPart?
-	{
-		return {
-			"type": "Literal",
-			"value": parseDecLiteral(text())
-		};
-	}
+	{ return { "type": "Literal", "value": parseDecLiteral(text()) }; }
 
 DecimalIntegerLiteral
 	= "0"
@@ -562,21 +629,21 @@ SingleEscapeCharacter
 	/ "n"  { return "\n"; }
 	/ "r"  { return "\r"; }
 	/ "t"  { return "\t"; }
-	/ "v"  { return "\x0B"; }   // IE does not recognize "\v".
+	/ "v"  { return "\v"; }
 
 /* Object Literals */
 ObjectLiteral
 	= "{" __ "}" {return { "type": "ObjectExpression", "properties": [] };}
-	/ "{" __ obj:JSONMembers __ "}" {return { "type": "ObjectExpression", "properties": obj };}
+	/ "{" __ obj:ObjectMembers __ "}" {return { "type": "ObjectExpression", "properties": obj };}
 
-JSONMembers
-	= first:JSONPair rest:(__ "," __ JSONPair)*
+ObjectMembers
+	= first:ObjectPair rest:(__ "," __ ObjectPair)*
 	{
 		return buildList(first, rest, 3);
 	}
 
-JSONPair
-	= key:JSONPropertyName __ ":" __ value:Expression
+ObjectPair
+	= key:ObjectPropertyName __ ":" __ value:Expression
 	{
 		return {
 			"key": key,
@@ -585,7 +652,7 @@ JSONPair
 		}
 	}
 
-JSONPropertyName
+ObjectPropertyName
 	= IdentifierName
 	/ StringLiteral
 	/ NumericLiteral
@@ -596,7 +663,7 @@ DSONLiteral
 	/ "{{" __ obj:DSONObject __ "}}" { return { "type": "ObjectExpression", "properties": obj }; }
 
 DSONObject
-	= "such" __ member:DSONMembers? __ "wow" { return optionalList(member); }
+	= SuchToken __ member:DSONMembers? __ WowToken { return optionalList(member); }
 
 DSONMembers
 	= first:DSONPair rest:(__ DSONMemberSeparator __ DSONPair)* { return buildList(first, rest, 3); }
@@ -605,7 +672,7 @@ DSONMemberSeparator
 	= "," / "." / "!" / "?"
 
 DSONPair
-	= key:JSONPropertyName __ "is" __ value:DSONValue
+	= key:ObjectPropertyName __ IsToken __ value:DSONValue
 	{
 		return {
 			"key": key,
@@ -615,7 +682,7 @@ DSONPair
 	}
 
 DSONArray
-	= "so" __ elements:DSONArrayElements? __ "many"
+	= SoToken __ elements:DSONArrayElements? __ ManyToken
 	{
 		return {
 			"type": "ArrayExpression",
@@ -630,7 +697,7 @@ DSONArrayElements
 	}
 
 DSONArraySeperator
-	= "and" / "also"
+	= AndToken / AlsoToken
 
 DSONValue
 	= Identifier
@@ -638,9 +705,9 @@ DSONValue
 	/ NumericLiteral
 	/ DSONObject
 	/ DSONArray
-	/ "yes" {return {"type": "Identifier", "name": true}}
-	/ "no" {return {"type": "Identifier", "name": false}}
-	/ "empty" {return {"type": "Identifier", "name": null}}
+	/ YesToken {return {"type": "Identifier", "name": true}}
+	/ NoToken {return {"type": "Identifier", "name": false}}
+	/ EmptyToken {return {"type": "Identifier", "name": null}}
 
 /** Array Literals */
 ArrayLiteral
@@ -709,14 +776,14 @@ LogicalORExpression
 	{ return buildLogicalExpression(first, rest); }
 
 LogicalOROperator
-	= "or" / "||"
+	= (OrToken / "||") {return "||"}
 
 LogicalANDExpression
 	= first:ComparisonExpression rest:(__ LogicalANDOperator __ ComparisonExpression)*
 	{ return buildLogicalExpression(first, rest); }
 
 LogicalANDOperator
-	= "and" / "&&"
+	= (AndToken / "&&") {return "&&"}
 
 LeftHandSideExpression
 	= CallExpression / NewExpression
@@ -743,15 +810,16 @@ UnaryExpression
 	{
 		return {
 			"type": "UnaryExpression",
-			"operator": toOP(op),
+			"operator": op,
 			"argument": argument,
 			"prefix": true
 		};
 	}
 
 UnaryOperator
-	= "dogeof" / "notrly"
-	/ "delete" / "void" / "typeof" / "!" / "~" / "++" / "--" / "+" / "-"
+	= (DogeofToken / TypeofToken) {return "typeof"}
+	/ (NotrlyToken / "!") {return "!"}
+	/ $DeleteToken / $VoidToken / "~" / "++" / "--" / "+" / "-"
 
 /* Comparison */
 ComparisonExpression
@@ -759,8 +827,8 @@ ComparisonExpression
 	{ return buildBinaryExpression(first, rest); }
 
 ComparisonOperator
-	= "not" / "is"
-	/ "!==" / "===" / "==" / "!="
+	= (NotToken / "!==") {return "!=="} / (IsToken / "===") {return "==="}
+	/ "==" / "!="
 
 /* Relationals */
 RelationalExpression
@@ -768,12 +836,15 @@ RelationalExpression
 	{ return buildBinaryExpression(first, rest); }
 	
 RelationalOperator
-	= "smallerish" / "smaller" / "biggerish" / "bigger" / "shibeof"
-	/ "<=" / "<" / ">=" / ">" / "instanceof"
+	= (SmallerishToken / "<=") {return "<="}
+	/ (SmallerToken / "<") {return "<"}
+	/ (BiggerishToken / ">=") {return ">="}
+	/ (BiggerToken / ">") {return ">"}
+	/ (ShibeofToken / InstanceofToken) {return "instanceof"}
 
 /* Function Call Expressions */
 CallExpression
-	= "plz" __ iden:MemberExpression args:(__ "with" __ FunctionArguments)?
+	= PlzToken __ iden:MemberExpression args:(__ WithToken __ FunctionArguments)?
 	{
 		return {
 			"type": "CallExpression",
@@ -782,24 +853,24 @@ CallExpression
 		}
 	}
 	/* support old "console dose loge" notation */
-	/ iden:MemberExpression __ "with" __ args:FunctionArguments
+	/ iden:MemberExpression __ WithToken __ args:FunctionArguments
 	{ return { "type": "CallExpression", "callee": iden, "arguments": args }; }
 	
 /* New Expressions */
 NewExpression
 	= MemberExpression
-	/ "new" __ iden:MemberExpression args:(__ "with" __ FunctionArguments)?
+	/ NewToken __ iden:MemberExpression args:(__ WithToken __ FunctionArguments)?
 	{
 		return {
 			"type": "NewExpression",
 			"callee": iden,
-			"arguments": extractOptional(args, 3) || []
+			"arguments": extractOptionalList(args, 3)
 		}
 	}
 
 /* AssignmentExpression */
 AssignmentExpression
-	= left:LeftHandSideExpression __ (("=" !"=") / "as") __ right:Expression
+	= left:LeftHandSideExpression __ (("=" !"=") / AsToken) __ right:Expression
 	{
 		return {
 			"type": "AssignmentExpression",
@@ -812,7 +883,7 @@ AssignmentExpression
 	{
 		return {
 			"type": "AssignmentExpression",
-			"operator": toOP(op),
+			"operator": op,
 			"left": left,
 			"right": right
 		};
@@ -820,8 +891,11 @@ AssignmentExpression
 	/ ConditionalExpression
 
 AssignmentOperator
-	= "as" / "more" / "less" / "lots" / "few"
-	/ "=" / "+=" / "-=" / "*=" / "/="
+	= (AsToken / "=") {return "="}
+	/ (MoreToken / "+=") {return "+="}
+	/ (LessToken / "-=") {return "-="}
+	/ (LotsToken / "*=") {return "*="}
+	/ (FewToken / "/=") {return "/="}
 
 ConditionalExpression
 	= test:LogicalORExpression __
@@ -829,8 +903,8 @@ ConditionalExpression
 	":" __ alternate:AssignmentExpression
 	{ return { "type": "ConditionalExpression", "test": test, "consequent": consequent, "alternate": alternate }; }
 	/ test:LogicalORExpression __
-	"rly" __ consequent:AssignmentExpression __
-	"but" __ alternate:AssignmentExpression
+	RlyToken __ consequent:AssignmentExpression __
+	ButToken __ alternate:AssignmentExpression
 	{ return { "type": "ConditionalExpression", "test": test, "consequent": consequent, "alternate": alternate }; }
 	/ LogicalORExpression
 
@@ -838,12 +912,12 @@ MemberExpression
 	= first:(
 		Primary
 		/ FunctionExpression
-		/ "new" __ iden:MemberExpression args:(__ "with" __ FunctionArguments)?
+		/ NewToken __ iden:MemberExpression args:(__ WithToken __ FunctionArguments)?
 		{
 			return {
 				"type": "NewExpression",
 				"callee": iden,
-				"arguments": extractOptional(args, 3) || []
+				"arguments": optionalList(extractOptional(args, 3))
 			}
 		}
 	)
@@ -868,7 +942,7 @@ MemberExpression
 
 /** 2.4 Function declarations */
 FunctionDeclaration
-	= "such" __ iden:Identifier args:(__ "much" __ FormalParameterList)? NEWLINE block:Block EmptyWowStatement
+	= SuchToken _ iden:Identifier args:(_ MuchToken _ FormalParameterList)? NEWLINE block:Block EmptyWowStatement
 	{
 		return {
 			"type": "FunctionDeclaration",
@@ -883,7 +957,7 @@ FunctionDeclaration
 
 /* FunctionExpression: buggy but works? */
 FunctionExpression	
-	= "much" args:(__ FormalParameterList)? NEWLINE body:Block EmptyWowStatement
+	= MuchToken args:(_ FormalParameterList)? NEWLINE body:Block EmptyWowStatement
 	{
 		return {
 			"type": "FunctionExpression",
@@ -907,7 +981,7 @@ FormalParameterList
 
 /** 2.5 If Statements */
 IfStatement
-	= "rly" __ test:Expression NEWLINE block:Block _else:(EmptyWowStatement {return null;} / ElseStatement)
+	= RlyToken _ test:Expression NEWLINE block:Block _else:(EmptyWowStatement {return null;} / ElseStatement)
 	{
 		return {
 			"type": "IfStatement",
@@ -919,12 +993,12 @@ IfStatement
 
 /** 2.5.1 Else Statements */
 ElseStatement
-	= "but" __ block:IfStatement {return block;}
-	/ "but" NEWLINE block:Block EmptyWowStatement {return block;}
+	= ButToken _ block:IfStatement {return block;}
+	/ ButToken NEWLINE block:Block EmptyWowStatement {return block;}
 
 /** 2.6 While Statements */
 WhileStatement
-	= "many" __ test:Expression NEWLINE block:Block EmptyWowStatement
+	= ManyToken _ test:Expression NEWLINE block:Block EmptyWowStatement
 	{
 		return {
 			"type": "WhileStatement",
@@ -935,9 +1009,9 @@ WhileStatement
 
 /** 2.7 For Statements */
 ForStatement
-	= "much" __
-	init:(Expression __)? ForNext __
-	test:(Expression __)? ForNext __
+	= MuchToken _
+	init:(Expression _)? ForNext _
+	test:(Expression _)? ForNext _
 	update:Expression? NEWLINE
 	body:Block
 	EmptyWowStatement
@@ -950,9 +1024,9 @@ ForStatement
 			"body": body
 		};
 	}
-	/ "much" __
-	"very" __ declarations:VariableDeclarationList __ ForNext __
-	test:(Expression __)? ForNext __
+	/ MuchToken _
+	VeryToken _ declarations:VariableDeclarationList _ ForNext _
+	test:(Expression _)? ForNext _
 	update:Expression? NEWLINE
 	body:Block
 	EmptyWowStatement
@@ -969,9 +1043,9 @@ ForStatement
 			"body": body
 		};
 	}
-	/ "much" __
-	left:LeftHandSideExpression __
-	"in" __
+	/ MuchToken _
+	left:LeftHandSideExpression _
+	InToken _
 	right:Expression NEWLINE
 	body:Block
 	EmptyWowStatement
@@ -983,9 +1057,9 @@ ForStatement
 			"body": body
 		};
 	}
-	/ "much" __
-	"very" __ declarations:VariableDeclarationList __
-	"in" __
+	/ MuchToken _
+	VeryToken _ declarations:VariableDeclarationList _
+	InToken _
 	right:Expression NEWLINE
 	body:Block
 	EmptyWowStatement
@@ -1002,11 +1076,11 @@ ForStatement
 		};
 	}
 
-ForNext = "next" / ';'
+ForNext = NextToken / ';'
 
 /** 2.8 Try-Catch-Finally Statements */
 TryStatement
-	= "try" NEWLINE block:Block handler:Catch finalizer:Finally
+	= TryToken NEWLINE block:Block handler:Catch finalizer:Finally EmptyWowStatement
 	{
 		return {
 			"type": "TryStatement",
@@ -1015,7 +1089,7 @@ TryStatement
 			"finalizer": finalizer
 		};
 	}
-	/ "try" NEWLINE block:Block handler:Catch
+	/ TryToken NEWLINE block:Block handler:Catch EmptyWowStatement
 	{
 		return {
 			"type": "TryStatement",
@@ -1024,7 +1098,7 @@ TryStatement
 			"finalizer": null
 		};
 	}
-	/ "try" NEWLINE block:Block finalizer:Finally
+	/ TryToken NEWLINE block:Block finalizer:Finally EmptyWowStatement
 	{
 		return {
 			"type": "TryStatement",
@@ -1035,7 +1109,7 @@ TryStatement
 	}
 
 Catch
-	= "catch" __ param:Identifier NEWLINE body:Block
+	= CatchToken _ param:Identifier NEWLINE body:Block
 	{
 		return {
 			"type": "CatchClause",
@@ -1045,14 +1119,14 @@ Catch
 	}
 
 Finally
-	= "retrieve" NEWLINE body:Block
+	= RetrieveToken NEWLINE body:Block
 	{
 		return body;
 	}
 
 /** 2.9 Throw Statement */
 ThrowStatement
-	= "throw" __ left:Expression EOS
+	= ThrowToken _ left:Expression EOS
 	{
 		return {
 			"type": "ThrowStatement",

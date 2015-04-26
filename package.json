@@ -1,6 +1,6 @@
 {
   "name": "dogescript-3",
-  "version": "2.4.52",
+  "version": "2.4.53",
   "description": "an unofficial third version of dogescript",
   "main": "index.js",
   "repository": {
@@ -17,19 +17,21 @@
   "dependencies": {
     "escodegen": "~1.6.1",
     "estraverse": "^1.9.1",
-    "optimist": "~0.6.0"
+    "optimist": "~0.6.0",
+    "xhr": "^1.8.0"
   },
   "bin": "./bin/dogescript.js",
   "scripts": {
-    "clean": "node ./test/clean.js",
     "test": "mocha",
     "prepublish": "node build.js",
-    "min": "uglifyjs dist/dogescript.js > dist/dogescript.min.js",
+	"build": "browserify index.js -s dogescript > dist/dogescript.js",
+	"min": "uglifyjs dist/dogescript.js > dist/dogescript.min.js",
     "dist": "npm run build && npm run min"
   },
   "devDependencies": {
     "uglify-js": "^2.4.13",
     "pegjs": "~0.8.0",
-	"mocha": "^2.2.0"
+	"mocha": "^2.2.0",
+	"browserify": "^4.1.9"
   }
 }
