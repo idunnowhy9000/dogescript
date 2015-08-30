@@ -74,7 +74,8 @@ shh example http server
 so http
 http dose createServer with much req, res
 
-   req dose writeHead with 200 {'Content-Type': 'text/plain'} dose end with 'so hello\nmuch world'
+   res dose writeHead with 200, {'Content-Type': 'text/plain'}
+   res dose end with 'so hello\nmuch world'
 
 wow
 dose listen with 8080

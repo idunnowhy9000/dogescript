@@ -942,12 +942,24 @@ MemberExpression
 
 /** 2.4 Function declarations */
 FunctionDeclaration
-	= SuchToken _ iden:Identifier args:(_ MuchToken _ FormalParameterList)? NEWLINE block:Block EmptyWowStatement
+	= SuchToken _ iden:Identifier NEWLINE block:Block EmptyWowStatement
 	{
 		return {
 			"type": "FunctionDeclaration",
 			"id": iden,
-			"params": extractOptionalList(args, 3),
+			"params": [],
+			"body": block,
+			
+			"generator": false,
+			"expression": false
+		}
+	}
+    / SuchToken _ iden:Identifier _ MuchToken _ args:FormalParameterList NEWLINE block:Block EmptyWowStatement
+	{
+		return {
+			"type": "FunctionDeclaration",
+			"id": iden,
+			"params": args,
 			"body": block,
 			
 			"generator": false,
@@ -957,12 +969,21 @@ FunctionDeclaration
 
 /* FunctionExpression: buggy but works? */
 FunctionExpression	
-	= MuchToken args:(_ FormalParameterList)? NEWLINE body:Block EmptyWowStatement
+	= MuchToken NEWLINE body:Block EmptyWowStatement
 	{
 		return {
 			"type": "FunctionExpression",
 			"id": null,
-			"params": extractOptionalList(args, 1),
+			"params": [],
+			"body": body
+		};
+	}
+    / MuchToken _ params:FormalParameterList NEWLINE body:Block EmptyWowStatement
+	{
+		return {
+			"type": "FunctionExpression",
+			"id": null,
+			"params": params,
 			"body": body
 		};
 	}
@@ -981,15 +1002,24 @@ FormalParameterList
 
 /** 2.5 If Statements */
 IfStatement
-	= RlyToken _ test:Expression NEWLINE block:Block _else:(EmptyWowStatement {return null;} / ElseStatement)
+	= RlyToken _ test:Expression NEWLINE block:Block EmptyWowStatement
 	{
 		return {
 			"type": "IfStatement",
 			"test": test,
 			"consequent": block,
-			"alternate": _else 
+			"alternate": null 
 		};
 	}
+	/ RlyToken _ test:Expression NEWLINE block:Block _else:ElseStatement
+    {
+        return {
+			"type": "IfStatement",
+			"test": test,
+			"consequent": block,
+			"alternate": _else
+		};
+    }
 
 /** 2.5.1 Else Statements */
 ElseStatement
